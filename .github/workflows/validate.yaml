@@ -1,0 +1,14 @@
+name: Pull Request validation
+
+on: [pull_request]
+
+
+jobs:
+  Salvo-contracts-ci:
+    name: Run Salvo-contracts validation
+    uses: ./.github/workflows/Salvo-contracts-ci.yaml
+
+  Salvo-frontend-ci:
+    name: Run Salvo-frontend validation
+    uses: ./.github/workflows/Salvo-frontend-ci.yaml
+

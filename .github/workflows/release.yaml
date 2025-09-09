@@ -1,0 +1,38 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
+      - '.vscode/**'
+      - '.idea/**'
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  Salvo-contracts-validate:
+    name: Run Salvo-contracts release
+    secrets: inherit
+    uses: ./.github/workflows/Salvo-contracts-ci.yaml
+
+  Salvo-contracts-release:
+    name: Run Salvo-contracts release
+    secrets: inherit
+    uses: ./.github/workflows/Salvo-contracts-cd.yaml
+    needs: Salvo-contracts-validate
+
+  Salvo-frontend-validate:
+    name: Run Salvo-frontend release
+    secrets: inherit
+    uses: ./.github/workflows/Salvo-frontend-ci.yaml
+
+  Salvo-frontend-release:
+    name: Run Salvo-frontend release
+    secrets: inherit
+    uses: ./.github/workflows/Salvo-frontend-cd.yaml
+    needs: Salvo-frontend-validate
