@@ -2,8 +2,8 @@
 from algopy import arc4
 
 
-# Struct containing game register values
-class UserProfile(arc4.Struct):
+# Define a struct that will store the user registry object data
+class UserRegistry(arc4.Struct):
     hosting_game: arc4.Bool  # Track if user is already hosting a game
     game_id: arc4.UInt64  # Game ID user has made a commitment towards playing
     commit_rand_round: arc4.UInt64  # VRF Beacon smart contract commitment round value
@@ -12,11 +12,11 @@ class UserProfile(arc4.Struct):
     )  # Round after registration expires and box can be deleted by others
 
 
-# Struct containing game state values
+# Define a struct that will store the game state object data
 class GameState(arc4.Struct):
     staking_closed: arc4.Bool  # If True, game is live, else players can join
     # quick_play_enabled: arc4.Bool  # If True, admin can start live phase
-    lobby_size: arc4.UInt8  #  Maximum game lobby capacity
+    lobby_size: arc4.UInt8  #  Maximum num of player that can join the lobby
     active_players: arc4.UInt8  # Active num of players currently in lobby
     box_l_start_pos: (
         arc4.UInt16
@@ -26,8 +26,8 @@ class GameState(arc4.Struct):
     admin_address: arc4.Address  # Game creator address, assigned as admin
 
 
-# Struct containing Player specific data
-class GamePlayer(arc4.Struct):
+# Define a struct that will store the game character object data
+class GameCharacter(arc4.Struct):
     id: arc4.UInt8
     current_pos: arc4.UInt8
     new_pos: arc4.UInt8

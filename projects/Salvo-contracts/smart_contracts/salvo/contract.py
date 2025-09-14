@@ -1,5 +1,6 @@
 # smart_contracts/salvo/contract.py
 # NOTE: Consider pinching a percentage of the prize pot
+# NOTE: Implement challenge issue on chain, verify challenge with ed25519
 from algopy import (
     Account,
     ARC4Contract,
@@ -30,12 +31,12 @@ class Salvo(ARC4Contract):
     # Application init method
     def __init__(self) -> None:
         # Box Storage type declarations
+        self.box_user_registry = BoxMap(Account, stc.UserRegistry, key_prefix="r_")
+
         self.box_game_grid = BoxMap(UInt64, ta.GameGrid, key_prefix="g_")
         self.box_game_state = BoxMap(UInt64, stc.GameState, key_prefix="s_")
         self.box_game_lobby = BoxMap(UInt64, Bytes, key_prefix="l_")
-        self.box_game_player = BoxMap(Account, stc.GamePlayer, key_prefix="p_")
-
-        self.box_user_profile = BoxMap(Account, stc.UserProfile, key_prefix="u_")
+        self.box_game_character = BoxMap(Account, stc.GameCharacter, key_prefix="c_")
 
     # READ-ONLY: Calculate the minimum balance requirement (MBR) cost for storing a single box unit
     @arc4.abimethod(readonly=True)
@@ -74,10 +75,25 @@ class Salvo(ARC4Contract):
             game_id, self.box_game_grid, srt.convert_grid_coords_to_index(x, y)
         )
 
+    # READ-ONLY: Return True if user registry box value exists, else False
+    @arc4.abimethod(readonly=True)
+    def does_box_user_registry_exist(self, account: Account) -> bool:
+        return self.box_user_registry.maybe(account)[1]
+
     # READ-ONLY: Return True if game grid box value exists, else False
     @arc4.abimethod(readonly=True)
     def does_box_game_grid_exist(self, game_id: UInt64) -> bool:
         return self.box_game_grid.maybe(game_id)[1]
+
+    # READ-ONLY: Return True if game state box value exists, else False
+    @arc4.abimethod(readonly=True)
+    def does_box_game_state_exist(self, game_id: UInt64) -> bool:
+        return self.box_game_state.maybe(game_id)[1]
+
+    # READ-ONLY: Return True if game character box value exists, else False
+    @arc4.abimethod(readonly=True)
+    def does_box_game_character_exist(self, account: Account) -> bool:
+        return self.box_game_character.maybe(account)[1]
 
     # READ-ONLY: Return an array of all active users in the game lobby at time of call
     @arc4.abimethod(readonly=True)
@@ -116,11 +132,32 @@ class Salvo(ARC4Contract):
         self.game_id = UInt64(1)
 
     @arc4.abimethod
+    def get_box_user_registry(self, box_r_pay: gtxn.PaymentTransaction) -> None:
+        # Fail transaction unless the assertion below evaluates True
+        assert Global.group_size == 2, err.INVALID_GROUP_SIZE
+        assert Txn.sender not in self.box_user_registry, err.BOX_FOUND
+        # assert self.box_game_trophy, err.BOX_NOT_FOUND
+
+        # assert box_r_pay.amount == cst.BOX_R_COST, err.INSUFFICIENT_PAY_AMOUNT
+        assert box_r_pay.sender == Txn.sender, err.INVALID_BOX_PAY_SENDER
+        assert (
+            box_r_pay.receiver == Global.current_application_address
+        ), err.INVALID_BOX_PAY_RECEIVER
+
+        # Create a new box storage unit for the user registry w/ the sender address value as key
+        self.box_user_registry[Txn.sender] = stc.UserRegistry(
+            hosting_game=arc4.Bool(False),  # noqa: FBT003
+            game_id=arc4.UInt64(0),
+            commit_rand_round=arc4.UInt64(0),
+            expiry_round=arc4.UInt64(Global.round + cst.BOX_R_EXP_ROUND_DELTA),
+        )
+
+    @arc4.abimethod
     def new_game(
         self,
         box_g_pay: gtxn.PaymentTransaction,
         box_s_pay: gtxn.PaymentTransaction,
-        box_p_pay: gtxn.PaymentTransaction,
+        box_c_pay: gtxn.PaymentTransaction,
         box_l_pay: gtxn.PaymentTransaction,
         stake_pay: gtxn.PaymentTransaction,
         lobby_size: arc4.UInt8,
@@ -130,7 +167,7 @@ class Salvo(ARC4Contract):
 
         assert box_g_pay.amount >= cst.BOX_G_COST, err.INSUFFICIENT_PAY_AMOUNT
         assert box_s_pay.amount >= cst.BOX_S_COST, err.INSUFFICIENT_PAY_AMOUNT
-        assert box_p_pay.amount >= cst.BOX_P_COST, err.INSUFFICIENT_PAY_AMOUNT
+        assert box_c_pay.amount >= cst.BOX_C_COST, err.INSUFFICIENT_PAY_AMOUNT
         assert box_l_pay.amount >= self.calc_single_box_cost(
             key_size=arc4.UInt8(10),
             value_size=arc4.UInt16(cst.ADDRESS_SIZE * lobby_size.native),
@@ -143,7 +180,7 @@ class Salvo(ARC4Contract):
 
         assert box_g_pay.sender == Txn.sender, err.INVALID_BOX_PAY_SENDER
         assert box_s_pay.sender == Txn.sender, err.INVALID_BOX_PAY_SENDER
-        assert box_p_pay.sender == Txn.sender, err.INVALID_BOX_PAY_SENDER
+        assert box_c_pay.sender == Txn.sender, err.INVALID_BOX_PAY_SENDER
         assert box_l_pay.sender == Txn.sender, err.INVALID_BOX_PAY_SENDER
         assert stake_pay.sender == Txn.sender, err.INVALID_STAKE_PAY_SENDER
 
@@ -154,7 +191,7 @@ class Salvo(ARC4Contract):
             box_s_pay.receiver == Global.current_application_address
         ), err.INVALID_BOX_PAY_RECEIVER
         assert (
-            box_p_pay.receiver == Global.current_application_address
+            box_c_pay.receiver == Global.current_application_address
         ), err.INVALID_BOX_PAY_RECEIVER
         assert (
             box_l_pay.receiver == Global.current_application_address
@@ -169,10 +206,10 @@ class Salvo(ARC4Contract):
             and lobby_size.native % 2 == 0
         ), err.INVALID_LOBBY_SIZE
 
-        # Create a game grid box with unique game ID as key
+        # Create a new box storage unit for the game grid w/ the current global game_id value as key
         self.box_game_grid[self.game_id] = ta.GameGrid.from_bytes(cst.ZEROED_GRID_BYTES)
 
-        # Create a game state box with unique game ID as key
+        # Create a new box storage unit for the game state w/ the current global game_id value as key
         self.box_game_state[self.game_id] = stc.GameState(
             staking_closed=arc4.Bool(False),  # noqa: FBT003
             # quick_play_enabled=arc4.Bool(False),  # quick_play_enabled),
@@ -184,13 +221,15 @@ class Salvo(ARC4Contract):
             admin_address=arc4.Address(Txn.sender),
         )
 
-        # Create a game lobby box with unique game ID as key
-        # Assign zeroed bytes to store all player addresses in lobby (32 bytes per player)
+        # NOTE: STAKE_PAY.AMOUNT in new game needs to be put in game state so others can match
+
+        # Create a new box storage unit for the game lobby w/ the current global game_id value as key
         self.box_game_lobby[self.game_id] = op.bzero(
             cst.ADDRESS_SIZE * lobby_size.native
-        )
+        )  # Assign zeroed bytes to store all player addresses in lobby (32 bytes per player)
 
-        self.box_game_player[Txn.sender] = stc.GamePlayer(
+        # Create a new box storage unit for the game character w/ the sender address value as key
+        self.box_game_character[Txn.sender] = stc.GameCharacter(
             arc4.UInt8(1),
             arc4.UInt8(6),
             arc4.UInt8(22),
@@ -218,7 +257,7 @@ class Salvo(ARC4Contract):
     @arc4.abimethod(allow_actions=["UpdateApplication"])
     def update(self) -> None:
         assert TemplateVar[bool]("UPDATABLE"), err.UPDATABLE_NOT_TRUE
-        assert Txn.sender == Global.creator_address, err.UNAUTH_CREATOR
+        assert Txn.sender == Global.creator_address, err.SENDER_NOT_CREATOR
 
         # return self._convert_grid_index_to_coords(i=arc4.UInt8(6))
 

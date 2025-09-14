@@ -57,7 +57,6 @@ pythonpath = ["smart_contracts", "tests"]
 [tool.mypy]
 files = "smart_contracts/"
 python_version = "3.12"
-incremental = false                 # Added as test to prevent mypy deamon from crashing
 disallow_any_generics = true
 disallow_subclassing_any = true
 disallow_untyped_calls = true

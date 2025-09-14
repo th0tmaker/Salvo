@@ -3,26 +3,26 @@
 
 // smart_contracts.salvo.contract.Salvo.__algopy_entrypoint_with_init() -> uint64:
 main:
-    intcblock 1 0 32 13 1000000 TMPL_GEN_UNIX TMPL_UPDATABLE
-    bytecblock 0x151f7c75 "g_" "game_id" 0x00 "l_"
+    intcblock 1 0 32 2 1000000 TMPL_GEN_UNIX TMPL_UPDATABLE
+    bytecblock 0x151f7c75 0x00 "g_" "r_" "game_id" "s_" "c_" "l_"
     // smart_contracts/salvo/contract.py:26-27
     // # Smart contract class
     // class Salvo(ARC4Contract):
     txn NumAppArgs
-    bz main_after_if_else@14
-    pushbytess 0x6333cd9d 0xb66d2f56 0x8996bb37 0x5381d6a8 0x0b42d12a 0x06f0d132 0x5be219f0 0x81e90542 0xa0e81872 // method "calc_single_box_cost(uint8,uint16)uint64", method "read_gen_unix()uint64", method "read_grid_cell_value_by_index(uint64,uint8)uint8", method "read_grid_cell_value_at_coords(uint64,uint8,uint8)uint8", method "does_box_game_grid_exist(uint64)bool", method "read_box_game_lobby(uint64)address[]", method "generate()void", method "new_game(pay,pay,pay,pay,pay,uint8)void", method "update()void"
+    bz main_after_if_else@18
+    pushbytess 0x6333cd9d 0xb66d2f56 0x8996bb37 0x5381d6a8 0x7815fe41 0x0b42d12a 0xbbfa8e01 0xf85053ad 0x06f0d132 0x5be219f0 0x3ffbca24 0x81e90542 0xa0e81872 // method "calc_single_box_cost(uint8,uint16)uint64", method "read_gen_unix()uint64", method "read_grid_cell_value_by_index(uint64,uint8)uint8", method "read_grid_cell_value_at_coords(uint64,uint8,uint8)uint8", method "does_box_user_registry_exist(account)bool", method "does_box_game_grid_exist(uint64)bool", method "does_box_game_state_exist(uint64)bool", method "does_box_game_character_exist(account)bool", method "read_box_game_lobby(uint64)address[]", method "generate()void", method "get_box_user_registry(pay)void", method "new_game(pay,pay,pay,pay,pay,uint8)void", method "update()void"
     txna ApplicationArgs 0
-    match main_calc_single_box_cost_route@5 main_read_gen_unix_route@6 main_read_grid_cell_value_by_index_route@7 main_read_grid_cell_value_at_coords_route@8 main_does_box_game_grid_exist_route@9 main_read_box_game_lobby_route@10 main_generate_route@11 main_new_game_route@12 main_update_route@13
+    match main_calc_single_box_cost_route@5 main_read_gen_unix_route@6 main_read_grid_cell_value_by_index_route@7 main_read_grid_cell_value_at_coords_route@8 main_does_box_user_registry_exist_route@9 main_does_box_game_grid_exist_route@10 main_does_box_game_state_exist_route@11 main_does_box_game_character_exist_route@12 main_read_box_game_lobby_route@13 main_generate_route@14 main_get_box_user_registry_route@15 main_new_game_route@16 main_update_route@17
 
-main_after_if_else@14:
+main_after_if_else@18:
     // smart_contracts/salvo/contract.py:26-27
     // # Smart contract class
     // class Salvo(ARC4Contract):
     intc_1 // 0
     return
 
-main_update_route@13:
-    // smart_contracts/salvo/contract.py:226
+main_update_route@17:
+    // smart_contracts/salvo/contract.py:254
     // @arc4.abimethod(allow_actions=["UpdateApplication"])
     txn OnCompletion
     pushint 4 // UpdateApplication
@@ -34,8 +34,8 @@ main_update_route@13:
     intc_0 // 1
     return
 
-main_new_game_route@12:
-    // smart_contracts/salvo/contract.py:118
+main_new_game_route@16:
+    // smart_contracts/salvo/contract.py:154
     // @arc4.abimethod
     txn OnCompletion
     !
@@ -70,7 +70,7 @@ main_new_game_route@12:
     ==
     assert // transaction type is pay
     txn GroupIndex
-    pushint 2 // 2
+    intc_3 // 2
     -
     dup
     gtxns TypeEnum
@@ -86,14 +86,39 @@ main_new_game_route@12:
     ==
     assert // transaction type is pay
     txna ApplicationArgs 1
-    // smart_contracts/salvo/contract.py:118
+    // smart_contracts/salvo/contract.py:154
     // @arc4.abimethod
     callsub new_game
     intc_0 // 1
     return
 
-main_generate_route@11:
-    // smart_contracts/salvo/contract.py:106-107
+main_get_box_user_registry_route@15:
+    // smart_contracts/salvo/contract.py:133
+    // @arc4.abimethod
+    txn OnCompletion
+    !
+    assert // OnCompletion is not NoOp
+    txn ApplicationID
+    assert // can only call when not creating
+    // smart_contracts/salvo/contract.py:26-27
+    // # Smart contract class
+    // class Salvo(ARC4Contract):
+    txn GroupIndex
+    intc_0 // 1
+    -
+    dup
+    gtxns TypeEnum
+    intc_0 // pay
+    ==
+    assert // transaction type is pay
+    // smart_contracts/salvo/contract.py:133
+    // @arc4.abimethod
+    callsub get_box_user_registry
+    intc_0 // 1
+    return
+
+main_generate_route@14:
+    // smart_contracts/salvo/contract.py:121-122
     // # Generate the smart contract application client
     // @arc4.abimethod(create="require")
     txn OnCompletion
@@ -106,8 +131,8 @@ main_generate_route@11:
     intc_0 // 1
     return
 
-main_read_box_game_lobby_route@10:
-    // smart_contracts/salvo/contract.py:82-83
+main_read_box_game_lobby_route@13:
+    // smart_contracts/salvo/contract.py:97-98
     // # READ-ONLY: Return an array of all active users in the game lobby at time of call
     // @arc4.abimethod(readonly=True)
     txn OnCompletion
@@ -120,7 +145,7 @@ main_read_box_game_lobby_route@10:
     // class Salvo(ARC4Contract):
     txna ApplicationArgs 1
     btoi
-    // smart_contracts/salvo/contract.py:82-83
+    // smart_contracts/salvo/contract.py:97-98
     // # READ-ONLY: Return an array of all active users in the game lobby at time of call
     // @arc4.abimethod(readonly=True)
     callsub read_box_game_lobby
@@ -131,8 +156,67 @@ main_read_box_game_lobby_route@10:
     intc_0 // 1
     return
 
-main_does_box_game_grid_exist_route@9:
-    // smart_contracts/salvo/contract.py:77-78
+main_does_box_game_character_exist_route@12:
+    // smart_contracts/salvo/contract.py:92-93
+    // # READ-ONLY: Return True if game character box value exists, else False
+    // @arc4.abimethod(readonly=True)
+    txn OnCompletion
+    !
+    assert // OnCompletion is not NoOp
+    txn ApplicationID
+    assert // can only call when not creating
+    // smart_contracts/salvo/contract.py:26-27
+    // # Smart contract class
+    // class Salvo(ARC4Contract):
+    txna ApplicationArgs 1
+    btoi
+    txnas Accounts
+    // smart_contracts/salvo/contract.py:92-93
+    // # READ-ONLY: Return True if game character box value exists, else False
+    // @arc4.abimethod(readonly=True)
+    callsub does_box_game_character_exist
+    bytec_1 // 0x00
+    intc_1 // 0
+    uncover 2
+    setbit
+    bytec_0 // 0x151f7c75
+    swap
+    concat
+    log
+    intc_0 // 1
+    return
+
+main_does_box_game_state_exist_route@11:
+    // smart_contracts/salvo/contract.py:87-88
+    // # READ-ONLY: Return True if game state box value exists, else False
+    // @arc4.abimethod(readonly=True)
+    txn OnCompletion
+    !
+    assert // OnCompletion is not NoOp
+    txn ApplicationID
+    assert // can only call when not creating
+    // smart_contracts/salvo/contract.py:26-27
+    // # Smart contract class
+    // class Salvo(ARC4Contract):
+    txna ApplicationArgs 1
+    btoi
+    // smart_contracts/salvo/contract.py:87-88
+    // # READ-ONLY: Return True if game state box value exists, else False
+    // @arc4.abimethod(readonly=True)
+    callsub does_box_game_state_exist
+    bytec_1 // 0x00
+    intc_1 // 0
+    uncover 2
+    setbit
+    bytec_0 // 0x151f7c75
+    swap
+    concat
+    log
+    intc_0 // 1
+    return
+
+main_does_box_game_grid_exist_route@10:
+    // smart_contracts/salvo/contract.py:82-83
     // # READ-ONLY: Return True if game grid box value exists, else False
     // @arc4.abimethod(readonly=True)
     txn OnCompletion
@@ -145,11 +229,41 @@ main_does_box_game_grid_exist_route@9:
     // class Salvo(ARC4Contract):
     txna ApplicationArgs 1
     btoi
-    // smart_contracts/salvo/contract.py:77-78
+    // smart_contracts/salvo/contract.py:82-83
     // # READ-ONLY: Return True if game grid box value exists, else False
     // @arc4.abimethod(readonly=True)
     callsub does_box_game_grid_exist
-    bytec_3 // 0x00
+    bytec_1 // 0x00
+    intc_1 // 0
+    uncover 2
+    setbit
+    bytec_0 // 0x151f7c75
+    swap
+    concat
+    log
+    intc_0 // 1
+    return
+
+main_does_box_user_registry_exist_route@9:
+    // smart_contracts/salvo/contract.py:77-78
+    // # READ-ONLY: Return True if user registry box value exists, else False
+    // @arc4.abimethod(readonly=True)
+    txn OnCompletion
+    !
+    assert // OnCompletion is not NoOp
+    txn ApplicationID
+    assert // can only call when not creating
+    // smart_contracts/salvo/contract.py:26-27
+    // # Smart contract class
+    // class Salvo(ARC4Contract):
+    txna ApplicationArgs 1
+    btoi
+    txnas Accounts
+    // smart_contracts/salvo/contract.py:77-78
+    // # READ-ONLY: Return True if user registry box value exists, else False
+    // @arc4.abimethod(readonly=True)
+    callsub does_box_user_registry_exist
+    bytec_1 // 0x00
     intc_1 // 0
     uncover 2
     setbit
@@ -349,7 +463,7 @@ read_grid_cell_value_by_index:
     // # Return byte value at grid cell index
     // return srt.get_grid_cell_value(game_id, self.box_game_grid, i)
     frame_dig -2
-    bytec_1 // "g_"
+    bytec_2 // "g_"
     frame_dig -1
     callsub get_grid_cell_value
     retsub
@@ -369,12 +483,12 @@ read_grid_cell_value_at_coords:
     frame_dig -2
     btoi
     dup
-    intc_3 // 13
+    pushint 13 // 13
     <
     bz read_grid_cell_value_at_coords_bool_false@4
     frame_dig -1
     btoi
-    intc_3 // 13
+    pushint 13 // 13
     <
     bz read_grid_cell_value_at_coords_bool_false@4
     intc_0 // 1
@@ -391,7 +505,7 @@ read_grid_cell_value_at_coords_bool_merge@5:
     // i = y.native * cst.GRID_SIZE + x.native  # Example: If x=3, y=2 → 2*12 + 3 = 27
     frame_dig -1
     btoi
-    intc_3 // 13
+    pushint 13 // 13
     *
     frame_dig 0
     +
@@ -413,7 +527,7 @@ read_grid_cell_value_at_coords_bool_merge@5:
     frame_dig -3
     // smart_contracts/salvo/contract.py:74
     // game_id, self.box_game_grid, srt.convert_grid_coords_to_index(x, y)
-    bytec_1 // "g_"
+    bytec_2 // "g_"
     // smart_contracts/salvo/contract.py:72-75
     // # Convert x & y coords to grid cell index, then return byte value at that index
     // return srt.get_grid_cell_value(
@@ -429,19 +543,72 @@ read_grid_cell_value_at_coords_bool_false@4:
     b read_grid_cell_value_at_coords_bool_merge@5
 
 
+// smart_contracts.salvo.contract.Salvo.does_box_user_registry_exist(account: bytes) -> uint64:
+does_box_user_registry_exist:
+    // smart_contracts/salvo/contract.py:77-79
+    // # READ-ONLY: Return True if user registry box value exists, else False
+    // @arc4.abimethod(readonly=True)
+    // def does_box_user_registry_exist(self, account: Account) -> bool:
+    proto 1 1
+    // smart_contracts/salvo/contract.py:80
+    // return self.box_user_registry.maybe(account)[1]
+    bytec_3 // "r_"
+    frame_dig -1
+    concat
+    box_get
+    bury 1
+    retsub
+
+
 // smart_contracts.salvo.contract.Salvo.does_box_game_grid_exist(game_id: uint64) -> uint64:
 does_box_game_grid_exist:
-    // smart_contracts/salvo/contract.py:77-79
+    // smart_contracts/salvo/contract.py:82-84
     // # READ-ONLY: Return True if game grid box value exists, else False
     // @arc4.abimethod(readonly=True)
     // def does_box_game_grid_exist(self, game_id: UInt64) -> bool:
     proto 1 1
-    // smart_contracts/salvo/contract.py:80
+    // smart_contracts/salvo/contract.py:85
     // return self.box_game_grid.maybe(game_id)[1]
     frame_dig -1
     itob
-    bytec_1 // "g_"
+    bytec_2 // "g_"
     swap
+    concat
+    box_get
+    bury 1
+    retsub
+
+
+// smart_contracts.salvo.contract.Salvo.does_box_game_state_exist(game_id: uint64) -> uint64:
+does_box_game_state_exist:
+    // smart_contracts/salvo/contract.py:87-89
+    // # READ-ONLY: Return True if game state box value exists, else False
+    // @arc4.abimethod(readonly=True)
+    // def does_box_game_state_exist(self, game_id: UInt64) -> bool:
+    proto 1 1
+    // smart_contracts/salvo/contract.py:90
+    // return self.box_game_state.maybe(game_id)[1]
+    frame_dig -1
+    itob
+    bytec 5 // "s_"
+    swap
+    concat
+    box_get
+    bury 1
+    retsub
+
+
+// smart_contracts.salvo.contract.Salvo.does_box_game_character_exist(account: bytes) -> uint64:
+does_box_game_character_exist:
+    // smart_contracts/salvo/contract.py:92-94
+    // # READ-ONLY: Return True if game character box value exists, else False
+    // @arc4.abimethod(readonly=True)
+    // def does_box_game_character_exist(self, account: Account) -> bool:
+    proto 1 1
+    // smart_contracts/salvo/contract.py:95
+    // return self.box_game_character.maybe(account)[1]
+    bytec 6 // "c_"
+    frame_dig -1
     concat
     box_get
     bury 1
@@ -450,26 +617,26 @@ does_box_game_grid_exist:
 
 // smart_contracts.salvo.contract.Salvo.read_box_game_lobby(game_id: uint64) -> bytes:
 read_box_game_lobby:
-    // smart_contracts/salvo/contract.py:82-84
+    // smart_contracts/salvo/contract.py:97-99
     // # READ-ONLY: Return an array of all active users in the game lobby at time of call
     // @arc4.abimethod(readonly=True)
     // def read_box_game_lobby(self, game_id: UInt64) -> ta.GameLobby:
     proto 1 1
     intc_1 // 0
     dup
-    // smart_contracts/salvo/contract.py:85-86
+    // smart_contracts/salvo/contract.py:100-101
     // # Fail transaction unless the assertion below evaluates True
     // assert game_id in self.box_game_lobby, err.GAME_ID_NOT_FOUND
     frame_dig -1
     itob
-    bytec 4 // "l_"
+    bytec 7 // "l_"
     swap
     concat
     dup
     box_len
     bury 1
     assert // Game ID not found. Ensure the game was created and still exists.
-    // smart_contracts/salvo/contract.py:88-89
+    // smart_contracts/salvo/contract.py:103-104
     // # Retrieve byte array of current user addresses from the box using the game id parameter
     // game_lobby_b_arr = self.box_game_lobby[game_id]
     box_get
@@ -477,26 +644,26 @@ read_box_game_lobby:
     dup
     uncover 2
     assert // check self.box_game_lobby entry exists
-    // smart_contracts/salvo/contract.py:91-92
+    // smart_contracts/salvo/contract.py:106-107
     // # Define a dynamic array to append all remaining active users
     // users_in_lobby = ta.GameLobby()
     pushbytes 0x0000
     swap
-    // smart_contracts/salvo/contract.py:94-95
+    // smart_contracts/salvo/contract.py:109-110
     // # Iterate through the users byte array
     // for i in urange(0, game_lobby_b_arr.length, cst.ADDRESS_SIZE):
     len
     intc_1 // 0
 
 read_box_game_lobby_for_header@1:
-    // smart_contracts/salvo/contract.py:94-95
+    // smart_contracts/salvo/contract.py:109-110
     // # Iterate through the users byte array
     // for i in urange(0, game_lobby_b_arr.length, cst.ADDRESS_SIZE):
     frame_dig 5
     frame_dig 4
     <
     bz read_box_game_lobby_after_for@6
-    // smart_contracts/salvo/contract.py:96-97
+    // smart_contracts/salvo/contract.py:111-112
     // # Extract the bytes representing the user address
     // user_addr_bytes = op.extract(game_lobby_b_arr, i, cst.ADDRESS_SIZE)
     frame_dig 2
@@ -505,7 +672,7 @@ read_box_game_lobby_for_header@1:
     extract3
     dup
     frame_bury 0
-    // smart_contracts/salvo/contract.py:98-99
+    // smart_contracts/salvo/contract.py:113-114
     // # Only append address if its bytes do NOT equal to a zeroed byte array of size 32
     // if user_addr_bytes != Bytes(cst.ZEROED_ADDR_BYTES):
     pushbytes 0x0000000000000000000000000000000000000000000000000000000000000000
@@ -513,7 +680,7 @@ read_box_game_lobby_for_header@1:
     frame_dig 3
     frame_bury 1
     bz read_box_game_lobby_after_if_else@4
-    // smart_contracts/salvo/contract.py:101
+    // smart_contracts/salvo/contract.py:116
     // users_in_lobby.append(arc4.Address(user_account))
     frame_dig 3
     extract 2 0
@@ -532,7 +699,7 @@ read_box_game_lobby_for_header@1:
 read_box_game_lobby_after_if_else@4:
     frame_dig 1
     frame_bury 3
-    // smart_contracts/salvo/contract.py:94-95
+    // smart_contracts/salvo/contract.py:109-110
     // # Iterate through the users byte array
     // for i in urange(0, game_lobby_b_arr.length, cst.ADDRESS_SIZE):
     frame_dig 5
@@ -542,7 +709,7 @@ read_box_game_lobby_after_if_else@4:
     b read_box_game_lobby_for_header@1
 
 read_box_game_lobby_after_for@6:
-    // smart_contracts/salvo/contract.py:103-104
+    // smart_contracts/salvo/contract.py:118-119
     // # Return the array containing the remaining active users in the game lobby
     // return users_in_lobby
     frame_dig 3
@@ -552,116 +719,148 @@ read_box_game_lobby_after_for@6:
 
 // smart_contracts.salvo.contract.Salvo.generate() -> void:
 generate:
-    // smart_contracts/salvo/contract.py:115-116
+    // smart_contracts/salvo/contract.py:130-131
     // # Set Global State variables to their default starting values
     // self.game_id = UInt64(1)
-    bytec_2 // "game_id"
+    bytec 4 // "game_id"
     intc_0 // 1
     app_global_put
     retsub
 
 
-// smart_contracts.salvo.contract.Salvo.new_game(stake_pay: uint64, box_g_pay: uint64, box_s_pay: uint64, box_p_pay: uint64, box_l_pay: uint64, lobby_size: bytes) -> void:
+// smart_contracts.salvo.contract.Salvo.get_box_user_registry(box_r_pay: uint64) -> void:
+get_box_user_registry:
+    // smart_contracts/salvo/contract.py:133-134
+    // @arc4.abimethod
+    // def get_box_user_registry(self, box_r_pay: gtxn.PaymentTransaction) -> None:
+    proto 1 0
+    // smart_contracts/salvo/contract.py:135-136
+    // # Fail transaction unless the assertion below evaluates True
+    // assert Global.group_size == 2, err.INVALID_GROUP_SIZE
+    global GroupSize
+    intc_3 // 2
+    ==
+    assert // Invalid group size. Ensure number of transactions in group is within valid bounds.
+    // smart_contracts/salvo/contract.py:137
+    // assert Txn.sender not in self.box_user_registry, err.BOX_FOUND
+    bytec_3 // "r_"
+    txn Sender
+    concat
+    box_len
+    bury 1
+    !
+    assert // Box found. Ensure the does not exist already.
+    // smart_contracts/salvo/contract.py:140-141
+    // # assert box_r_pay.amount == cst.BOX_R_COST, err.INSUFFICIENT_PAY_AMOUNT
+    // assert box_r_pay.sender == Txn.sender, err.INVALID_BOX_PAY_SENDER
+    frame_dig -1
+    gtxns Sender
+    txn Sender
+    ==
+    assert // Box payment sender address must match transaction sender address.
+    // smart_contracts/salvo/contract.py:143
+    // box_r_pay.receiver == Global.current_application_address
+    frame_dig -1
+    gtxns Receiver
+    global CurrentApplicationAddress
+    ==
+    // smart_contracts/salvo/contract.py:142-144
+    // assert (
+    //     box_r_pay.receiver == Global.current_application_address
+    // ), err.INVALID_BOX_PAY_RECEIVER
+    assert // Box payment receiver address must match application address.
+    // smart_contracts/salvo/contract.py:151
+    // expiry_round=arc4.UInt64(Global.round + cst.BOX_R_EXP_ROUND_DELTA),
+    global Round
+    pushint 30 // 30
+    +
+    itob
+    // smart_contracts/salvo/contract.py:146-152
+    // # Create a new box storage unit for the user registry w/ the sender address value as key
+    // self.box_user_registry[Txn.sender] = stc.UserRegistry(
+    //     hosting_game=arc4.Bool(False),  # noqa: FBT003
+    //     game_id=arc4.UInt64(0),
+    //     commit_rand_round=arc4.UInt64(0),
+    //     expiry_round=arc4.UInt64(Global.round + cst.BOX_R_EXP_ROUND_DELTA),
+    // )
+    pushbytes 0x0000000000000000000000000000000000
+    swap
+    concat
+    // smart_contracts/salvo/contract.py:146-147
+    // # Create a new box storage unit for the user registry w/ the sender address value as key
+    // self.box_user_registry[Txn.sender] = stc.UserRegistry(
+    bytec_3 // "r_"
+    txn Sender
+    concat
+    // smart_contracts/salvo/contract.py:146-152
+    // # Create a new box storage unit for the user registry w/ the sender address value as key
+    // self.box_user_registry[Txn.sender] = stc.UserRegistry(
+    //     hosting_game=arc4.Bool(False),  # noqa: FBT003
+    //     game_id=arc4.UInt64(0),
+    //     commit_rand_round=arc4.UInt64(0),
+    //     expiry_round=arc4.UInt64(Global.round + cst.BOX_R_EXP_ROUND_DELTA),
+    // )
+    swap
+    box_put
+    retsub
+
+
+// smart_contracts.salvo.contract.Salvo.new_game(box_g_pay: uint64, box_s_pay: uint64, box_c_pay: uint64, box_l_pay: uint64, stake_pay: uint64, lobby_size: bytes) -> void:
 new_game:
-    // smart_contracts/salvo/contract.py:118-127
+    // smart_contracts/salvo/contract.py:154-163
     // @arc4.abimethod
     // def new_game(
     //     self,
-    //     stake_pay: gtxn.PaymentTransaction,
     //     box_g_pay: gtxn.PaymentTransaction,
     //     box_s_pay: gtxn.PaymentTransaction,
-    //     box_p_pay: gtxn.PaymentTransaction,
+    //     box_c_pay: gtxn.PaymentTransaction,
     //     box_l_pay: gtxn.PaymentTransaction,
+    //     stake_pay: gtxn.PaymentTransaction,
     //     lobby_size: arc4.UInt8,
     // ) -> None:
     proto 6 0
-    pushbytes ""
-    dup
-    // smart_contracts/salvo/contract.py:128-129
+    // smart_contracts/salvo/contract.py:164-165
     // # Fail transaction unless the assertion below evaluates True
     // assert Global.group_size == 6, err.INVALID_GROUP_SIZE
     global GroupSize
     pushint 6 // 6
     ==
     assert // Invalid group size. Ensure number of transactions in group is within valid bounds.
-    // smart_contracts/salvo/contract.py:138
-    // stake_pay.amount >= cst.MIN_STAKE_AMOUNT
+    // smart_contracts/salvo/contract.py:167
+    // assert box_g_pay.amount >= cst.BOX_G_COST, err.INSUFFICIENT_PAY_AMOUNT
     frame_dig -6
-    gtxns Amount
-    dup
-    intc 4 // 1000000
-    >=
-    // smart_contracts/salvo/contract.py:138-140
-    // stake_pay.amount >= cst.MIN_STAKE_AMOUNT
-    // and stake_pay.amount <= cst.MAX_STAKE_AMOUNT
-    // and stake_pay.amount % cst.MIN_STAKE_AMOUNT == 0
-    bz new_game_bool_false@4
-    // smart_contracts/salvo/contract.py:139
-    // and stake_pay.amount <= cst.MAX_STAKE_AMOUNT
-    frame_dig 2
-    pushint 500000000 // 500000000
-    <=
-    // smart_contracts/salvo/contract.py:138-140
-    // stake_pay.amount >= cst.MIN_STAKE_AMOUNT
-    // and stake_pay.amount <= cst.MAX_STAKE_AMOUNT
-    // and stake_pay.amount % cst.MIN_STAKE_AMOUNT == 0
-    bz new_game_bool_false@4
-    // smart_contracts/salvo/contract.py:140
-    // and stake_pay.amount % cst.MIN_STAKE_AMOUNT == 0
-    frame_dig 2
-    intc 4 // 1000000
-    %
-    // smart_contracts/salvo/contract.py:138-140
-    // stake_pay.amount >= cst.MIN_STAKE_AMOUNT
-    // and stake_pay.amount <= cst.MAX_STAKE_AMOUNT
-    // and stake_pay.amount % cst.MIN_STAKE_AMOUNT == 0
-    bnz new_game_bool_false@4
-    intc_0 // 1
-
-new_game_bool_merge@5:
-    // smart_contracts/salvo/contract.py:137-141
-    // assert (
-    //     stake_pay.amount >= cst.MIN_STAKE_AMOUNT
-    //     and stake_pay.amount <= cst.MAX_STAKE_AMOUNT
-    //     and stake_pay.amount % cst.MIN_STAKE_AMOUNT == 0
-    // ), err.INVALID_STAKE_AMOUNT
-    assert // Invalid stake amount. Value must be a multiple of 1 and within permitted bounds.
-    // smart_contracts/salvo/contract.py:143-144
-    // # assert stake_pay.amount == stake_amount
-    // assert box_g_pay.amount >= cst.BOX_G_COST, err.INSUFFICIENT_BOX_PAY_AMOUNT
-    frame_dig -5
     gtxns Amount
     pushint 54900 // 54900
     >=
-    assert // Insufficient funds. Box pay amount is not enough to cover application MBR.
-    // smart_contracts/salvo/contract.py:145
-    // assert box_s_pay.amount >= cst.BOX_S_COST, err.INSUFFICIENT_BOX_PAY_AMOUNT
-    frame_dig -4
+    assert // Insufficient payment amount. Value is not enough to cover the minimum requirements.
+    // smart_contracts/salvo/contract.py:168
+    // assert box_s_pay.amount >= cst.BOX_S_COST, err.INSUFFICIENT_PAY_AMOUNT
+    frame_dig -5
     gtxns Amount
     pushint 27700 // 27700
     >=
-    assert // Insufficient funds. Box pay amount is not enough to cover application MBR.
-    // smart_contracts/salvo/contract.py:146
-    // assert box_p_pay.amount >= cst.BOX_P_COST, err.INSUFFICIENT_BOX_PAY_AMOUNT
-    frame_dig -3
+    assert // Insufficient payment amount. Value is not enough to cover the minimum requirements.
+    // smart_contracts/salvo/contract.py:169
+    // assert box_c_pay.amount >= cst.BOX_C_COST, err.INSUFFICIENT_PAY_AMOUNT
+    frame_dig -4
     gtxns Amount
     pushint 18100 // 18100
     >=
-    assert // Insufficient funds. Box pay amount is not enough to cover application MBR.
-    // smart_contracts/salvo/contract.py:147
+    assert // Insufficient payment amount. Value is not enough to cover the minimum requirements.
+    // smart_contracts/salvo/contract.py:170
     // assert box_l_pay.amount >= self.calc_single_box_cost(
-    frame_dig -2
+    frame_dig -3
     gtxns Amount
-    // smart_contracts/salvo/contract.py:149
+    // smart_contracts/salvo/contract.py:172
     // value_size=arc4.UInt16(cst.ADDRESS_SIZE * lobby_size.native),
     frame_dig -1
     btoi
     dup
-    frame_bury 0
+    cover 2
     intc_2 // 32
     *
     dup
-    frame_bury 1
+    cover 2
     itob
     dup
     bitlen
@@ -669,134 +868,176 @@ new_game_bool_merge@5:
     <=
     assert // overflow
     extract 6 2
-    // smart_contracts/salvo/contract.py:148
+    // smart_contracts/salvo/contract.py:171
     // key_size=arc4.UInt8(10),
     pushbytes 0x0a
-    // smart_contracts/salvo/contract.py:147-150
+    // smart_contracts/salvo/contract.py:170-173
     // assert box_l_pay.amount >= self.calc_single_box_cost(
     //     key_size=arc4.UInt8(10),
     //     value_size=arc4.UInt16(cst.ADDRESS_SIZE * lobby_size.native),
-    // ), err.INSUFFICIENT_BOX_PAY_AMOUNT
+    // ), err.INSUFFICIENT_PAY_AMOUNT
     swap
     callsub calc_single_box_cost
     >=
-    assert // Insufficient funds. Box pay amount is not enough to cover application MBR.
-    // smart_contracts/salvo/contract.py:152
-    // assert stake_pay.sender == Txn.sender, err.INVALID_STAKE_PAY_SENDER
+    assert // Insufficient payment amount. Value is not enough to cover the minimum requirements.
+    // smart_contracts/salvo/contract.py:175
+    // stake_pay.amount >= cst.MIN_STAKE_AMOUNT
+    frame_dig -2
+    gtxns Amount
+    dup
+    intc 4 // 1000000
+    >=
+    // smart_contracts/salvo/contract.py:175-177
+    // stake_pay.amount >= cst.MIN_STAKE_AMOUNT
+    // and stake_pay.amount <= cst.MAX_STAKE_AMOUNT
+    // and stake_pay.amount % cst.MIN_STAKE_AMOUNT == 0
+    bz new_game_bool_false@4
+    // smart_contracts/salvo/contract.py:176
+    // and stake_pay.amount <= cst.MAX_STAKE_AMOUNT
+    frame_dig 2
+    pushint 500000000 // 500000000
+    <=
+    // smart_contracts/salvo/contract.py:175-177
+    // stake_pay.amount >= cst.MIN_STAKE_AMOUNT
+    // and stake_pay.amount <= cst.MAX_STAKE_AMOUNT
+    // and stake_pay.amount % cst.MIN_STAKE_AMOUNT == 0
+    bz new_game_bool_false@4
+    // smart_contracts/salvo/contract.py:177
+    // and stake_pay.amount % cst.MIN_STAKE_AMOUNT == 0
+    frame_dig 2
+    intc 4 // 1000000
+    %
+    // smart_contracts/salvo/contract.py:175-177
+    // stake_pay.amount >= cst.MIN_STAKE_AMOUNT
+    // and stake_pay.amount <= cst.MAX_STAKE_AMOUNT
+    // and stake_pay.amount % cst.MIN_STAKE_AMOUNT == 0
+    bnz new_game_bool_false@4
+    intc_0 // 1
+
+new_game_bool_merge@5:
+    // smart_contracts/salvo/contract.py:174-178
+    // assert (
+    //     stake_pay.amount >= cst.MIN_STAKE_AMOUNT
+    //     and stake_pay.amount <= cst.MAX_STAKE_AMOUNT
+    //     and stake_pay.amount % cst.MIN_STAKE_AMOUNT == 0
+    // ), err.INVALID_STAKE_AMOUNT
+    assert // Invalid stake amount. Value must be a multiple of 1 and within permitted bounds.
+    // smart_contracts/salvo/contract.py:180
+    // assert box_g_pay.sender == Txn.sender, err.INVALID_BOX_PAY_SENDER
     frame_dig -6
+    gtxns Sender
+    txn Sender
+    ==
+    assert // Box payment sender address must match transaction sender address.
+    // smart_contracts/salvo/contract.py:181
+    // assert box_s_pay.sender == Txn.sender, err.INVALID_BOX_PAY_SENDER
+    frame_dig -5
+    gtxns Sender
+    txn Sender
+    ==
+    assert // Box payment sender address must match transaction sender address.
+    // smart_contracts/salvo/contract.py:182
+    // assert box_c_pay.sender == Txn.sender, err.INVALID_BOX_PAY_SENDER
+    frame_dig -4
+    gtxns Sender
+    txn Sender
+    ==
+    assert // Box payment sender address must match transaction sender address.
+    // smart_contracts/salvo/contract.py:183
+    // assert box_l_pay.sender == Txn.sender, err.INVALID_BOX_PAY_SENDER
+    frame_dig -3
+    gtxns Sender
+    txn Sender
+    ==
+    assert // Box payment sender address must match transaction sender address.
+    // smart_contracts/salvo/contract.py:184
+    // assert stake_pay.sender == Txn.sender, err.INVALID_STAKE_PAY_SENDER
+    frame_dig -2
     gtxns Sender
     txn Sender
     ==
     assert // Stake payment sender address must match sender address.
-    // smart_contracts/salvo/contract.py:153
-    // assert box_g_pay.sender == Txn.sender, err.INVALID_BOX_PAY_SENDER
-    frame_dig -5
-    gtxns Sender
-    txn Sender
-    ==
-    assert // Box payment sender address must match transaction sender address.
-    // smart_contracts/salvo/contract.py:154
-    // assert box_s_pay.sender == Txn.sender, err.INVALID_BOX_PAY_SENDER
-    frame_dig -4
-    gtxns Sender
-    txn Sender
-    ==
-    assert // Box payment sender address must match transaction sender address.
-    // smart_contracts/salvo/contract.py:155
-    // assert box_p_pay.sender == Txn.sender, err.INVALID_BOX_PAY_SENDER
-    frame_dig -3
-    gtxns Sender
-    txn Sender
-    ==
-    assert // Box payment sender address must match transaction sender address.
-    // smart_contracts/salvo/contract.py:156
-    // assert box_l_pay.sender == Txn.sender, err.INVALID_BOX_PAY_SENDER
-    frame_dig -2
-    gtxns Sender
-    txn Sender
-    ==
-    assert // Box payment sender address must match transaction sender address.
-    // smart_contracts/salvo/contract.py:159
-    // stake_pay.receiver == Global.current_application_address
+    // smart_contracts/salvo/contract.py:187
+    // box_g_pay.receiver == Global.current_application_address
     frame_dig -6
     gtxns Receiver
     global CurrentApplicationAddress
     ==
-    // smart_contracts/salvo/contract.py:158-160
-    // assert (
-    //     stake_pay.receiver == Global.current_application_address
-    // ), err.INVALID_BOX_PAY_RECEIVER
-    assert // Box payment receiver address must match application address.
-    // smart_contracts/salvo/contract.py:162
-    // box_g_pay.receiver == Global.current_application_address
-    frame_dig -5
-    gtxns Receiver
-    global CurrentApplicationAddress
-    ==
-    // smart_contracts/salvo/contract.py:161-163
+    // smart_contracts/salvo/contract.py:186-188
     // assert (
     //     box_g_pay.receiver == Global.current_application_address
     // ), err.INVALID_BOX_PAY_RECEIVER
     assert // Box payment receiver address must match application address.
-    // smart_contracts/salvo/contract.py:165
+    // smart_contracts/salvo/contract.py:190
     // box_s_pay.receiver == Global.current_application_address
-    frame_dig -4
+    frame_dig -5
     gtxns Receiver
     global CurrentApplicationAddress
     ==
-    // smart_contracts/salvo/contract.py:164-166
+    // smart_contracts/salvo/contract.py:189-191
     // assert (
     //     box_s_pay.receiver == Global.current_application_address
     // ), err.INVALID_BOX_PAY_RECEIVER
     assert // Box payment receiver address must match application address.
-    // smart_contracts/salvo/contract.py:168
-    // box_p_pay.receiver == Global.current_application_address
+    // smart_contracts/salvo/contract.py:193
+    // box_c_pay.receiver == Global.current_application_address
+    frame_dig -4
+    gtxns Receiver
+    global CurrentApplicationAddress
+    ==
+    // smart_contracts/salvo/contract.py:192-194
+    // assert (
+    //     box_c_pay.receiver == Global.current_application_address
+    // ), err.INVALID_BOX_PAY_RECEIVER
+    assert // Box payment receiver address must match application address.
+    // smart_contracts/salvo/contract.py:196
+    // box_l_pay.receiver == Global.current_application_address
     frame_dig -3
     gtxns Receiver
     global CurrentApplicationAddress
     ==
-    // smart_contracts/salvo/contract.py:167-169
-    // assert (
-    //     box_p_pay.receiver == Global.current_application_address
-    // ), err.INVALID_BOX_PAY_RECEIVER
-    assert // Box payment receiver address must match application address.
-    // smart_contracts/salvo/contract.py:171
-    // box_l_pay.receiver == Global.current_application_address
-    frame_dig -2
-    gtxns Receiver
-    global CurrentApplicationAddress
-    ==
-    // smart_contracts/salvo/contract.py:170-172
+    // smart_contracts/salvo/contract.py:195-197
     // assert (
     //     box_l_pay.receiver == Global.current_application_address
     // ), err.INVALID_BOX_PAY_RECEIVER
     assert // Box payment receiver address must match application address.
-    // smart_contracts/salvo/contract.py:175
+    // smart_contracts/salvo/contract.py:199
+    // stake_pay.receiver == Global.current_application_address
+    frame_dig -2
+    gtxns Receiver
+    global CurrentApplicationAddress
+    ==
+    // smart_contracts/salvo/contract.py:198-200
+    // assert (
+    //     stake_pay.receiver == Global.current_application_address
+    // ), err.INVALID_BOX_PAY_RECEIVER
+    assert // Box payment receiver address must match application address.
+    // smart_contracts/salvo/contract.py:203
     // lobby_size >= cst.MIN_LOBBY_SIZE
     frame_dig -1
     pushbytes 0x02
     b>=
-    // smart_contracts/salvo/contract.py:175-177
+    // smart_contracts/salvo/contract.py:203-205
     // lobby_size >= cst.MIN_LOBBY_SIZE
     // and lobby_size <= cst.MAX_LOBBY_SIZE
     // and lobby_size.native % 2 == 0
     bz new_game_bool_false@9
-    // smart_contracts/salvo/contract.py:176
+    // smart_contracts/salvo/contract.py:204
     // and lobby_size <= cst.MAX_LOBBY_SIZE
     frame_dig -1
     pushbytes 0x04
     b<=
-    // smart_contracts/salvo/contract.py:175-177
+    // smart_contracts/salvo/contract.py:203-205
     // lobby_size >= cst.MIN_LOBBY_SIZE
     // and lobby_size <= cst.MAX_LOBBY_SIZE
     // and lobby_size.native % 2 == 0
     bz new_game_bool_false@9
-    // smart_contracts/salvo/contract.py:177
+    // smart_contracts/salvo/contract.py:205
     // and lobby_size.native % 2 == 0
     frame_dig 0
-    pushint 2 // 2
+    intc_3 // 2
     %
-    // smart_contracts/salvo/contract.py:175-177
+    // smart_contracts/salvo/contract.py:203-205
     // lobby_size >= cst.MIN_LOBBY_SIZE
     // and lobby_size <= cst.MAX_LOBBY_SIZE
     // and lobby_size.native % 2 == 0
@@ -804,45 +1045,45 @@ new_game_bool_merge@5:
     intc_0 // 1
 
 new_game_bool_merge@10:
-    // smart_contracts/salvo/contract.py:174-178
+    // smart_contracts/salvo/contract.py:202-206
     // assert (
     //     lobby_size >= cst.MIN_LOBBY_SIZE
     //     and lobby_size <= cst.MAX_LOBBY_SIZE
     //     and lobby_size.native % 2 == 0
     // ), err.INVALID_LOBBY_SIZE
     assert // Invalid Lobby size. Value must be an even number and within permitted bounds.
-    // smart_contracts/salvo/contract.py:180-181
-    // # Create a game grid box with unique game ID as key
+    // smart_contracts/salvo/contract.py:208-209
+    // # Create a new box storage unit for the game grid w/ the current global game_id value as key
     // self.box_game_grid[self.game_id] = ta.GameGrid.from_bytes(cst.ZEROED_GRID_BYTES)
     intc_1 // 0
-    bytec_2 // "game_id"
+    bytec 4 // "game_id"
     app_global_get_ex
     assert // check self.game_id exists
     dup
     itob
-    bytec_1 // "g_"
+    bytec_2 // "g_"
     dig 1
     concat
     pushbytes 0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
     box_put
-    // smart_contracts/salvo/contract.py:190
+    // smart_contracts/salvo/contract.py:218
     // expiry_ts=arc4.UInt64(Global.latest_timestamp + cst.PHASE_EXPIRY_INTERVAL),
     global LatestTimestamp
     pushint 1200 // 1200
     +
     itob
-    // smart_contracts/salvo/contract.py:191
+    // smart_contracts/salvo/contract.py:219
     // prize_pot=arc4.UInt64(stake_pay.amount),
     frame_dig 2
     itob
-    // smart_contracts/salvo/contract.py:192
+    // smart_contracts/salvo/contract.py:220
     // admin_address=arc4.Address(Txn.sender),
     txn Sender
-    // smart_contracts/salvo/contract.py:185
+    // smart_contracts/salvo/contract.py:213
     // staking_closed=arc4.Bool(False),  # noqa: FBT003
-    bytec_3 // 0x00
-    // smart_contracts/salvo/contract.py:183-193
-    // # Create a game state box with unique game ID as key
+    bytec_1 // 0x00
+    // smart_contracts/salvo/contract.py:211-221
+    // # Create a new box storage unit for the game state w/ the current global game_id value as key
     // self.box_game_state[self.game_id] = stc.GameState(
     //     staking_closed=arc4.Bool(False),  # noqa: FBT003
     //     # quick_play_enabled=arc4.Bool(False),  # quick_play_enabled),
@@ -855,11 +1096,11 @@ new_game_bool_merge@10:
     // )
     frame_dig -1
     concat
-    // smart_contracts/salvo/contract.py:188
+    // smart_contracts/salvo/contract.py:216
     // active_players=arc4.UInt8(1),
     pushbytes 0x01
-    // smart_contracts/salvo/contract.py:183-193
-    // # Create a game state box with unique game ID as key
+    // smart_contracts/salvo/contract.py:211-221
+    // # Create a new box storage unit for the game state w/ the current global game_id value as key
     // self.box_game_state[self.game_id] = stc.GameState(
     //     staking_closed=arc4.Bool(False),  # noqa: FBT003
     //     # quick_play_enabled=arc4.Bool(False),  # quick_play_enabled),
@@ -871,11 +1112,11 @@ new_game_bool_merge@10:
     //     admin_address=arc4.Address(Txn.sender),
     // )
     concat
-    // smart_contracts/salvo/contract.py:189
+    // smart_contracts/salvo/contract.py:217
     // box_l_start_pos=arc4.UInt16(cst.ADDRESS_SIZE),
     pushbytes 0x0020
-    // smart_contracts/salvo/contract.py:183-193
-    // # Create a game state box with unique game ID as key
+    // smart_contracts/salvo/contract.py:211-221
+    // # Create a new box storage unit for the game state w/ the current global game_id value as key
     // self.box_game_state[self.game_id] = stc.GameState(
     //     staking_closed=arc4.Bool(False),  # noqa: FBT003
     //     # quick_play_enabled=arc4.Bool(False),  # quick_play_enabled),
@@ -893,14 +1134,14 @@ new_game_bool_merge@10:
     concat
     swap
     concat
-    // smart_contracts/salvo/contract.py:183-184
-    // # Create a game state box with unique game ID as key
+    // smart_contracts/salvo/contract.py:211-212
+    // # Create a new box storage unit for the game state w/ the current global game_id value as key
     // self.box_game_state[self.game_id] = stc.GameState(
-    pushbytes "s_"
+    bytec 5 // "s_"
     dig 2
     concat
-    // smart_contracts/salvo/contract.py:183-193
-    // # Create a game state box with unique game ID as key
+    // smart_contracts/salvo/contract.py:211-221
+    // # Create a new box storage unit for the game state w/ the current global game_id value as key
     // self.box_game_state[self.game_id] = stc.GameState(
     //     staking_closed=arc4.Bool(False),  # noqa: FBT003
     //     # quick_play_enabled=arc4.Bool(False),  # quick_play_enabled),
@@ -913,40 +1154,39 @@ new_game_bool_merge@10:
     // )
     swap
     box_put
-    // smart_contracts/salvo/contract.py:195-199
-    // # Create a game lobby box with unique game ID as key
-    // # Assign zeroed bytes to store all player addresses in lobby (32 bytes per player)
+    // smart_contracts/salvo/contract.py:223-226
+    // # Create a new box storage unit for the game lobby w/ the current global game_id value as key
     // self.box_game_lobby[self.game_id] = op.bzero(
     //     cst.ADDRESS_SIZE * lobby_size.native
-    // )
+    // )  # Assign zeroed bytes to store all player addresses in lobby (32 bytes per player)
     frame_dig 1
     bzero
-    // smart_contracts/salvo/contract.py:195-197
-    // # Create a game lobby box with unique game ID as key
-    // # Assign zeroed bytes to store all player addresses in lobby (32 bytes per player)
+    // smart_contracts/salvo/contract.py:223-224
+    // # Create a new box storage unit for the game lobby w/ the current global game_id value as key
     // self.box_game_lobby[self.game_id] = op.bzero(
-    bytec 4 // "l_"
+    bytec 7 // "l_"
     uncover 2
     concat
-    // smart_contracts/salvo/contract.py:195-199
-    // # Create a game lobby box with unique game ID as key
-    // # Assign zeroed bytes to store all player addresses in lobby (32 bytes per player)
+    // smart_contracts/salvo/contract.py:223-226
+    // # Create a new box storage unit for the game lobby w/ the current global game_id value as key
     // self.box_game_lobby[self.game_id] = op.bzero(
     //     cst.ADDRESS_SIZE * lobby_size.native
-    // )
+    // )  # Assign zeroed bytes to store all player addresses in lobby (32 bytes per player)
     dup
     box_del
     pop
     dup
     uncover 2
     box_put
-    // smart_contracts/salvo/contract.py:201
-    // self.box_game_player[Txn.sender] = stc.GamePlayer(
-    pushbytes "p_"
+    // smart_contracts/salvo/contract.py:228-229
+    // # Create a new box storage unit for the game character w/ the sender address value as key
+    // self.box_game_character[Txn.sender] = stc.GameCharacter(
+    bytec 6 // "c_"
     txn Sender
     concat
-    // smart_contracts/salvo/contract.py:201-207
-    // self.box_game_player[Txn.sender] = stc.GamePlayer(
+    // smart_contracts/salvo/contract.py:228-235
+    // # Create a new box storage unit for the game character w/ the sender address value as key
+    // self.box_game_character[Txn.sender] = stc.GameCharacter(
     //     arc4.UInt8(1),
     //     arc4.UInt8(6),
     //     arc4.UInt8(22),
@@ -955,17 +1195,17 @@ new_game_bool_merge@10:
     // )
     pushbytes 0x0106160a00
     box_put
-    // smart_contracts/salvo/contract.py:213
+    // smart_contracts/salvo/contract.py:241
     // game_lobby_bref.replace(0, Txn.sender.bytes)
     intc_1 // 0
     txn Sender
     box_replace
-    // smart_contracts/salvo/contract.py:215-216
+    // smart_contracts/salvo/contract.py:243-244
     // # Increment game id by 1 for next new game instance
     // self.game_id += 1
     intc_0 // 1
     +
-    bytec_2 // "game_id"
+    bytec 4 // "game_id"
     swap
     app_global_put
     retsub
@@ -981,14 +1221,14 @@ new_game_bool_false@4:
 
 // smart_contracts.salvo.contract.Salvo.update() -> void:
 update:
-    // smart_contracts/salvo/contract.py:228
+    // smart_contracts/salvo/contract.py:256
     // assert TemplateVar[bool]("UPDATABLE"), err.UPDATABLE_NOT_TRUE
     intc 6 // TMPL_UPDATABLE
     assert // Template variable 'UPDATABLE' needs to be 'True' at deploy-time.
-    // smart_contracts/salvo/contract.py:229
-    // assert Txn.sender == Global.creator_address, err.UNAUTH_CREATOR
+    // smart_contracts/salvo/contract.py:257
+    // assert Txn.sender == Global.creator_address, err.SENDER_NOT_CREATOR
     txn Sender
     global CreatorAddress
     ==
-    assert // Sender address is not authorized to create this application.
+    assert // Only app creator can act as the sender address.
     retsub

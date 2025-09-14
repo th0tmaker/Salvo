@@ -1,9 +1,9 @@
 // src/components/Home.tsx
 import { useWallet } from '@txnlab/use-wallet-react'
 import React, { useState } from 'react'
+import AppCalls from './components/AppCalls'
 import ConnectWallet from './components/ConnectWallet'
 import Transact from './components/Transact'
-import AppCalls from './components/AppCalls'
 
 interface HomeProps {}
 

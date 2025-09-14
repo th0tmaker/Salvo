@@ -189,6 +189,52 @@ def test_fund_app_mbr(apps: dict[str, SalvoClient]) -> None:
     ), "fund_app_txn.confirmation transaction failed confirmation."
 
 
+# Test case for sending an app call transaction to the `get_box_user_registry` method of the smart contract
+def test_get_box_user_registry(
+    creator: SigningAccount,
+    apps: dict[str, SalvoClient],
+) -> None:
+    # Get smart contract application from from apps dict
+    app = apps["salvo_client_1"]
+
+    # Define nested function that attemps to call the `get_box_user_registry` method
+    def try_get_box_user_registry_txn(
+        sender: SigningAccount,
+        note: bytes | str | None = None,
+    ) -> None:
+        # Create the required payment transactions
+        box_r_pay = create_payment_txn(
+            app=app,
+            sender=sender,
+            amount=cst.BOX_R_COST,
+            note=b'salvo:j{"concern":"txn.pay;box_r_mbr_pay"}',
+        )  # Box user registry MBR cost payment
+
+        # Send app call transaction to execute smart contract method `new_game`
+        send_app_call_txn(
+            logger=logger,
+            app=app,
+            sender=sender,
+            method=app.send.get_box_user_registry,
+            args=(box_r_pay,),
+            note=note,
+            description="App Call Method Call Transaction: get_box_user_registry()",
+        )
+
+    # Call `try_get_box_user_registry_txn`
+    try_get_box_user_registry_txn(
+        sender=creator,
+        note=b'salvo:j{"method":"new_game","concern":"txn.app_call;user_registered_their_acc"}',
+    )
+
+    box_r_value = app.state.box.box_user_registry.get_value(
+        decode_address(creator.address)
+    )
+
+    # Log
+    logger.info(box_r_value)
+
+
 # Test case for sending an app call transaction to the `new_game` method of the smart contract
 def test_new_game(
     creator: SigningAccount,
@@ -228,16 +274,16 @@ def test_new_game(
             amount=cst.BOX_S_COST,
             note=b'salvo:j{"concern":"txn.pay;box_s_mbr_pay"}',
         )  # Box game state MBR cost payment
-        box_p_pay = create_payment_txn(
+        box_c_pay = create_payment_txn(
             app=app,
             sender=sender,
-            amount=cst.BOX_P_COST,
-            note=b'salvo:j{"concern":"txn.pay;box_p_mbr_pay"}',
-        )  # Box game player MBR cost payment
+            amount=cst.BOX_C_COST,
+            note=b'salvo:j{"concern":"txn.pay;box_c_mbr_pay"}',
+        )  # Box game character MBR cost payment
         box_l_pay = create_payment_txn(
             app=app,
             sender=sender,
-            amount=box_l_cost,
+            amount=box_l_cost,  # current cost: 32_100 mAlgo
             note=b'salvo:j{"concern":"txn.pay;box_l_mbr_pay"}',
         )  # Box game lobby MBR cost payment
 
@@ -248,16 +294,14 @@ def test_new_game(
             sender=sender,
             method=app.send.new_game,
             args=(
-                stake_pay,
                 box_g_pay,
                 box_s_pay,
-                box_p_pay,
+                box_c_pay,
                 box_l_pay,
+                stake_pay,
                 lobby_size,
             ),
-            # max_fee=micro_algo(100_000),
             note=note,
-            # send_params=SendParams(cover_app_call_inner_transaction_fees=True),
             description="App Call Method Call Transaction: new_game()",
         )
 
@@ -272,7 +316,7 @@ def test_new_game(
     game_id_1_bytes = (1).to_bytes(8, "big")
     box_g_value = app.state.box.box_game_grid.get_value(game_id_1_bytes)
     box_s_value = app.state.box.box_game_state.get_value(game_id_1_bytes)
-    box_p_value = app.state.box.box_game_player.get_value(
+    box_p_value = app.state.box.box_game_character.get_value(
         decode_address(creator.address)
     )
 

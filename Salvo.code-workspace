@@ -16,12 +16,16 @@
       "projects/": true
     },
     "jest.disabledWorkspaceFolders": ["ROOT", "projects"],
-    "dotenv.enableAutocloaking": false
+    "dotenv.enableAutocloaking": false,
+    "python.analysis.typeCheckingMode": "off",
+    "python.analysis.aiCodeActions": {
+      
+    }
   },
   "extensions": {
     "recommendations": ["joshx.workspace-terminals"]
   },
-  
+
   "tasks": {
     "version": "2.0.0",
     "tasks": [
