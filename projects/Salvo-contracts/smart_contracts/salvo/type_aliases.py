@@ -3,13 +3,20 @@ from typing import Literal, TypeAlias
 
 from algopy import arc4
 
-# Define a 11x11 grid as an ARC-4 Static Array data type w/ 121 bytes in size
+# 11x11 game grid represented as a 1D flattened static array of 121 cells
 GameGrid: TypeAlias = arc4.StaticArray[arc4.UInt8, Literal[121]]
 
-# Define the game lobby as an ARC-4 Dynamic Array data type w/ ARC-4 Address as the value data type
+# Dynamic array of user addresses representing the game lobby
 GameLobby: TypeAlias = arc4.DynamicArray[arc4.Address]
 
-# Define the game grid x and y coordinates as UInt8 values inside an ARC-4 Tuple
+# Grid cell coordinates as a tuple of (x=row, y=col), each as UInt8
 GridCoords: TypeAlias = arc4.Tuple[arc4.UInt8, arc4.UInt8]
 
+# Ordered dynamic array of grid coordinates representing a sequence of moves
 MoveSequence: TypeAlias = arc4.DynamicArray[GridCoords]
+
+# Dynamic array of valid neighboring cells (up, down, left, right) in a 4-connected grid
+Neighbors: TypeAlias = arc4.StaticArray[GridCoords, Literal[4]]
+
+# Tuple w/ neighbors and an UInt8 counter of valid neighbors
+NeighborsValid: TypeAlias = tuple[Neighbors, arc4.UInt8]

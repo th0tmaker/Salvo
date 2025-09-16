@@ -210,7 +210,9 @@ class Salvo(ARC4Contract, avm_version=11):
         ), err.INVALID_LOBBY_SIZE
 
         # Create a new box storage unit for the game grid w/ the current global game_id value as key
-        self.box_game_grid[self.game_id] = ta.GameGrid.from_bytes(cst.ZEROED_GRID_BYTES)
+        self.box_game_grid[self.game_id] = ta.GameGrid.from_bytes(
+            cst.ZEROED_MATRIX_BYTES
+        )
 
         # Create a new box storage unit for the game state w/ the current global game_id value as key
         self.box_game_state[self.game_id] = stc.GameState(
@@ -266,8 +268,8 @@ class Salvo(ARC4Contract, avm_version=11):
         # move_points: arc4.UInt8,
         move_sequence: ta.MoveSequence,
         salt: arc4.UInt64,
-        # ) -> tuple[bool, bool, bool, bool]:  # Bytes
-    ) -> Bytes:
+    ) -> tuple[bool, bool, bool, bool]:  # Bytes
+        # ) -> Bytes:
         # Ensure transaction has sufficient opcode budget
         ensure_budget(required_budget=5600, fee_source=OpUpFeeSource.GroupCredit)
 
@@ -278,7 +280,7 @@ class Salvo(ARC4Contract, avm_version=11):
         ), "cur pos mismatch"
 
         assert (
-            current_pos <= cst.TOTAL_GRID_CELLS
+            current_pos <= cst.TOTAL_MATRIX_CELLS
         ), "cur pos must not exceed TOTAL_GRID_CELLS=121"
 
         preimage = Bytes()
@@ -287,11 +289,11 @@ class Salvo(ARC4Contract, avm_version=11):
         preimage += srt.u8_to_fr32(current_pos)
 
         for coord in move_sequence:
-            assert coord[0] <= cst.GRID_SIZE - 1, "x out of range"
-            assert coord[1] <= cst.GRID_SIZE - 1, "y out of range"
-
-            preimage += srt.u8_to_fr32(coord[0])
-            preimage += srt.u8_to_fr32(coord[1])
+            x, y = coord.native
+            assert x < cst.MATRIX_SIZE, "x out of range"
+            assert y < cst.MATRIX_SIZE, "y out of range"
+            preimage += srt.u8_to_fr32(x)
+            preimage += srt.u8_to_fr32(y)
 
         preimage += srt.u64_to_fr32(salt)
 
@@ -300,7 +302,8 @@ class Salvo(ARC4Contract, avm_version=11):
         # return srt.check_valid_move(
         #     UInt64(1), self.box_game_grid[self.game_id], current_pos
         # )
-        return Bytes(b"b")
+
+        return srt.check_valid_move(UInt64(1), self.box_game_grid, arc4.UInt8(120))
         # return output
         # return tuple[bool, bool, bool, bool]
 
