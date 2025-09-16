@@ -332,3 +332,64 @@ def test_new_game(
 
     logger.info(f"Creator address: {creator.address}")
     logger.info(f"Game lobby: {read_game_1_lobby_txn.abi_return}")
+
+
+# Test case for sending an app call transaction to the `get_box_user_registry` method of the smart contract
+def test_mimc_tester(
+    creator: SigningAccount,
+    apps: dict[str, SalvoClient],
+) -> None:
+    # Get smart contract application from from apps dict
+    app = apps["salvo_client_1"]
+
+    # Define nested function that attemps to call the `mimc_tester` method
+    def try_mimc_tester_txn(
+        sender: SigningAccount,
+        direction: int,
+        action: int,
+        current_pos: int,
+        # move_points: int,
+        move_sequence: list[tuple[int, int]],
+        salt: int,
+        note: bytes | str | None = None,
+    ) -> None:
+        # Send app call transaction to execute smart contract method `mimc_tester`
+        send_app_call_txn(
+            logger=logger,
+            app=app,
+            sender=sender,
+            method=app.send.mimc_tester,
+            args=(direction, action, current_pos, move_sequence, salt),
+            max_fee=20_000,
+            note=note,
+            description="App Call Method Call Transaction: mimc_tester()",
+        )
+
+    # Call `try_mimc_tester_txn`
+    try_mimc_tester_txn(
+        sender=creator,
+        direction=0,
+        action=0,
+        current_pos=6,
+        move_sequence=[(1, 2), (3, 4), (5, 10)],
+        salt=1234567888999,
+        note=b'salvo:j{"method":"mimc_tester","concern":"txn.app_call;test_mimc_hashing"}',
+    )
+
+    # composer = app.new_group()
+
+    # composer.mimc_tester(
+    #     args=(0, 0, 1, [(11, 22), (33, 44), (55, 66)], 1234567888999),
+    #     params=CommonAppCallParams(
+    #         sender=creator.address,
+    #         signer=creator.signer,
+    #         max_fee=micro_algo(20_000),
+    #     ),
+    # )
+
+    # result = composer.simulate(
+    #     allow_more_logs=True,
+    #     extra_opcode_budget=5_000,
+    # )
+
+    # logger.info(result)

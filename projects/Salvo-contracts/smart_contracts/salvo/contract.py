@@ -8,12 +8,15 @@ from algopy import (
     BoxRef,
     Bytes,
     Global,
+    OpUpFeeSource,
     TemplateVar,
     Txn,
     UInt64,
     arc4,
+    ensure_budget,
     gtxn,
     op,
+    subroutine,
     urange,
 )
 
@@ -25,7 +28,7 @@ from . import type_aliases as ta
 
 
 # Smart contract class
-class Salvo(ARC4Contract):
+class Salvo(ARC4Contract, avm_version=11):
     game_id: UInt64
 
     # Application init method
@@ -212,7 +215,7 @@ class Salvo(ARC4Contract):
         # Create a new box storage unit for the game state w/ the current global game_id value as key
         self.box_game_state[self.game_id] = stc.GameState(
             staking_closed=arc4.Bool(False),  # noqa: FBT003
-            # quick_play_enabled=arc4.Bool(False),  # quick_play_enabled),
+            # quick_play_enabled=arc4.Bool(False),  # quick_play_enabled,
             lobby_size=lobby_size,
             active_players=arc4.UInt8(1),
             box_l_start_pos=arc4.UInt16(cst.ADDRESS_SIZE),
@@ -254,12 +257,64 @@ class Salvo(ARC4Contract):
         #     game_id, self.box_game_grid, arc4.UInt8(116), arc4.UInt8(2)
         # )
 
+    @arc4.abimethod
+    def mimc_tester(
+        self,
+        direction: arc4.UInt8,
+        action: arc4.UInt8,
+        current_pos: arc4.UInt8,
+        # move_points: arc4.UInt8,
+        move_sequence: ta.MoveSequence,
+        salt: arc4.UInt64,
+        # ) -> tuple[bool, bool, bool, bool]:  # Bytes
+    ) -> Bytes:
+        # Ensure transaction has sufficient opcode budget
+        ensure_budget(required_budget=5600, fee_source=OpUpFeeSource.GroupCredit)
+
+        assert direction <= 3, "direction must be [0, 1, 2, 3]"
+        assert action <= 1, "action must be [0, 1]"
+        assert (
+            current_pos == self.box_game_character[Txn.sender].current_pos
+        ), "cur pos mismatch"
+
+        assert (
+            current_pos <= cst.TOTAL_GRID_CELLS
+        ), "cur pos must not exceed TOTAL_GRID_CELLS=121"
+
+        preimage = Bytes()
+        preimage += srt.u8_to_fr32(direction)
+        preimage += srt.u8_to_fr32(action)
+        preimage += srt.u8_to_fr32(current_pos)
+
+        for coord in move_sequence:
+            assert coord[0] <= cst.GRID_SIZE - 1, "x out of range"
+            assert coord[1] <= cst.GRID_SIZE - 1, "y out of range"
+
+            preimage += srt.u8_to_fr32(coord[0])
+            preimage += srt.u8_to_fr32(coord[1])
+
+        preimage += srt.u64_to_fr32(salt)
+
+        # output = op.mimc(op.MiMCConfigurations.BLS12_381Mp111, preimage)
+        # a = UInt64(1)
+        # return srt.check_valid_move(
+        #     UInt64(1), self.box_game_grid[self.game_id], current_pos
+        # )
+        return Bytes(b"b")
+        # return output
+        # return tuple[bool, bool, bool, bool]
+
+    @subroutine
+    def move(self) -> None:
+        "a"
+
+        # char = self.box_game_character[Txn.sender]  # index=6
+        # coords = srt.convert_grid_index_to_coords(char.current_pos)
+
     @arc4.abimethod(allow_actions=["UpdateApplication"])
     def update(self) -> None:
         assert TemplateVar[bool]("UPDATABLE"), err.UPDATABLE_NOT_TRUE
         assert Txn.sender == Global.creator_address, err.SENDER_NOT_CREATOR
-
-        # return self._convert_grid_index_to_coords(i=arc4.UInt8(6))
 
     # Allow application creator to delete the smart contract application
     # @arc4.abimethod(allow_actions=["DeleteApplication"])

@@ -36,18 +36,22 @@ def send_app_call_txn(
     sender: SigningAccount,
     method: Callable[..., SendAppTransactionResult],
     args: Optional[tuple] = None,
-    max_fee: int = 1000,
+    max_fee: Optional[int] = None,
     note: bytes | str | None = None,
     send_params: Optional[SendParams] = None,
     description: str = "App call",
 ) -> None:
     # Define the commonly used app call params
     params = CommonAppCallParams(
-        max_fee=micro_algo(max_fee),
         sender=sender.address,
         signer=sender.signer,
         note=note,
+        max_fee=micro_algo(max_fee) if max_fee is not None else None,
     )
+
+    # Set send_params if max_fee is provided and send_params not already set
+    if max_fee is not None and send_params is None:
+        send_params = SendParams(cover_app_call_inner_transaction_fees=True)
 
     # Perform try and except
     try:
