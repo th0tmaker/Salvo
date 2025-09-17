@@ -5,34 +5,76 @@ from . import constants as cst
 from . import errors as err
 from . import type_aliases as ta
 
-# Two focused subroutines - cleaner and more efficient
-# @subroutine
-# def validate_move_in_neighbors(
-#     neighbors_with_count: ta.NeighborsWithCount,
-#     target_coords: ta.GridCoords,
-# ) -> bool:
-#     """Check if target coords exists in valid neighbors (early exit)"""
-#     for i in urange(neighbors_with_count[1].native):
-#         if neighbors_with_count[0][i] == target_coords:
-#             return True
-#     return False
+
+# Reusable assert function: Fail transaction if row and col values are out of bounds
+@subroutine
+def assert_coords_in_range(row: arc4.UInt8, col: arc4.UInt8) -> None:
+    assert row < cst.GRID_SIZE and col < cst.GRID_SIZE, err.INVALID_POS_COORDS
 
 
+# Return a dynamic array containing all valid path cells based
 @subroutine
 def get_valid_path_cells(
     neighbors_with_count: ta.NeighborsWithCount,
 ) -> ta.CoordsArray:
+    # Create a dynamic array to store multiple tuples of coords
     valid_path_cells = ta.CoordsArray()
-    for i in urange(neighbors_with_count[1].native):
-        coords = neighbors_with_count[0][i]
-        valid_path_cells.append(coords)
 
+    # Iterate through the count value of the `neighbors_with_count` tuple
+    for i in urange(neighbors_with_count[1].native):
+        # Every index within count range is a valid path cell, append it
+        valid_path_cells.append(neighbors_with_count[0][i])
+
+    # Return the dynamic array of valid path cells
     return valid_path_cells
 
 
+# Check if character single move is valid
 @subroutine
-def assert_coords_in_range(row: arc4.UInt8, col: arc4.UInt8) -> None:
-    assert row < cst.GRID_SIZE and col < cst.GRID_SIZE, err.INVALID_POS_COORDS
+def is_single_move_valid(
+    neighbors_with_count: ta.NeighborsWithCount,
+    coords: ta.CoordsPair,
+) -> bool:
+    # Iterate through the count value of the `neighbors_with_count` tuple
+    for i in urange(neighbors_with_count[1].native):
+        # Check if the coords argument is equal to the neighbors entry at given index
+        if coords == neighbors_with_count[0][i]:
+            return True  # Move is valid
+    return False  # Move is invalid
+
+
+# Check if characte rmove sequence is valid
+@subroutine
+def is_move_sequence_valid(
+    game_id: UInt64,
+    box_game_grid: BoxMap[UInt64, ta.GameGrid],
+    position: ta.CoordsPair,
+    movement: ta.CoordsArray,
+) -> bool:
+    # Iterate through the coords in the movement sequence
+    for coords in movement:
+        # Extract row and column values from the entry
+        row, col = coords.native
+
+        # Assert row and column are within valid range
+        assert_coords_in_range(row, col)
+
+        # Get all neighbors of current position and a valid path count
+        neighbors_with_count = get_neighbors_with_count(
+            game_id,
+            box_game_grid,
+            position,
+        )
+
+        # Check if coords entry from movement sequence is not a valid move
+        if not is_single_move_valid(neighbors_with_count, coords):
+            return False
+
+        # Update current position coords
+        position = coords
+
+    # If all entry coords in movement in range of count are valid, return True
+    return True
 
 
 @subroutine
@@ -49,9 +91,9 @@ def is_path_cell(
     ) == arc4.UInt8(0)
 
 
-# Find every valid path cell that neighbors current position coords
+# Get every cell that neighbors current position coords and a count of valid paths cells
 @subroutine
-def find_neighbors_with_count(
+def get_neighbors_with_count(
     game_id: UInt64,
     box_game_grid: BoxMap[UInt64, ta.GameGrid],
     coords: ta.CoordsPair,
@@ -138,7 +180,7 @@ def convert_grid_index_to_coords(i: arc4.UInt8) -> ta.CoordsPair:
     row = i.native // cst.GRID_SIZE  # Compute 'row' from integer floor division
     col = i.native % cst.GRID_SIZE  # Compute 'col' coordinate from remainder
 
-    # Wrap coordinates in a GridCoords tuple object and return
+    # Wrap coordinates in a `CoordsPair` tuple object and return
     return ta.CoordsPair((arc4.UInt8(row), arc4.UInt8(col)))
 
 

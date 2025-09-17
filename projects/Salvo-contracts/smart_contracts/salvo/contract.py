@@ -1,5 +1,6 @@
 # smart_contracts/salvo/contract.py
 # NOTE: Consider pinching a percentage of the prize pot
+
 from algopy import (
     Account,
     ARC4Contract,
@@ -15,7 +16,6 @@ from algopy import (
     ensure_budget,
     gtxn,
     op,
-    subroutine,
     urange,
 )
 
@@ -134,7 +134,10 @@ class Salvo(ARC4Contract, avm_version=11):
         self.game_id = UInt64(1)
 
     @arc4.abimethod
-    def get_box_user_registry(self, box_r_pay: gtxn.PaymentTransaction) -> None:
+    def get_box_user_registry(
+        self,
+        box_r_pay: gtxn.PaymentTransaction,
+    ) -> None:
         # Fail transaction unless the assertion below evaluates True
         assert Global.group_size == 2, err.INVALID_GROUP_SIZE
         assert Txn.sender not in self.box_user_registry, err.BOX_FOUND
@@ -248,14 +251,6 @@ class Salvo(ARC4Contract, avm_version=11):
         # Increment game id by 1 for next new game instance
         self.game_id += 1
 
-        # Set player 1 and player 2 position on the grid
-        # srt.set_grid_cell_value_at_index(
-        #     game_id, self.box_game_grid, arc4.UInt8(6), arc4.UInt8(1)
-        # )
-        # srt.set_grid_cell_value_at_index(
-        #     game_id, self.box_game_grid, arc4.UInt8(116), arc4.UInt8(2)
-        # )
-
     @arc4.abimethod
     def mimc_tester(
         self,
@@ -264,8 +259,7 @@ class Salvo(ARC4Contract, avm_version=11):
         action: arc4.UInt8,
         direction: arc4.UInt8,
         salt: UInt64,
-    ) -> arc4.DynamicArray[ta.CoordsPair]:
-        # ) -> UInt64:
+    ) -> UInt64:
         # Ensure transaction has sufficient opcode budget
         ensure_budget(required_budget=5600, fee_source=OpUpFeeSource.GroupCredit)
 
@@ -286,70 +280,42 @@ class Salvo(ARC4Contract, avm_version=11):
         assert action <= 1, err.ACTION_OVERFLOW
         assert direction <= 3, err.DIRECTION_OVERFLOW
 
-        # Initialize preimage byte array for MiMC hashing
+        assert srt.is_move_sequence_valid(
+            UInt64(1), self.box_game_grid, position, movement.copy()
+        ), err.INVALID_MOVE_SEQUENCE
+
+        # Initialize a preimage byte array that will store scalar input ints for MiMC hashing
         preimage = Bytes()
 
+        # Iterate through all the entries in the movement coords array
         for new_coords in movement:
             # Extract new row and new column values from the given movement argument
             new_row, new_col = new_coords.native
-
-            # Fail transaction unless the assertion below evaluates True
-            srt.assert_coords_in_range(new_row, new_col)
-
-            # Find valid path cells from current position coords
-            neighbors_with_count = srt.find_neighbors_with_count(
-                UInt64(1),
-                self.box_game_grid,
-                position,
-            )
-
-            # Check if the new_coords cell is among the valid neighbors
-            is_move_valid = False
-            for i in urange(neighbors_with_count[1].native):
-                if new_coords == neighbors_with_count[0][i]:
-                    is_move_valid = True
-                    break
-
-            assert is_move_valid, "invalid move in move_sequence"
-
             # Append the validated move to preimage
             preimage += srt.u8_to_fr32(new_row)
             preimage += srt.u8_to_fr32(new_col)
-
-            # Update position w/ new coords
-            position = new_coords
 
         # Add rest of the scalar inputs
         preimage += srt.u8_to_fr32(action)
         preimage += srt.u8_to_fr32(direction)
         preimage += srt.u64_to_fr32(arc4.UInt64(salt))
 
-        # After processing the full sequence, find valid path cells of the last updated position
-        neighbors_with_count = srt.find_neighbors_with_count(
-            UInt64(1),
-            self.box_game_grid,
-            position,
-        )
-
-        valid_path_cells = srt.get_valid_path_cells(neighbors_with_count)
-        # output = op.mimc(op.MiMCConfigurations.BLS12_381Mp111, preimage)
-        # a = UInt64(1)
-        # return srt.check_valid_move(
-        #     UInt64(1), self.box_game_grid[self.game_id], current_pos
+        # # After processing the full sequence, find valid path cells of the last updated position
+        # neighbors_with_count = srt.get_neighbors_with_count(
+        #     UInt64(1),
+        #     self.box_game_grid,
+        #     position,
         # )
 
-        # return srt.check_valid_move(UInt64(1), self.box_game_grid, arc4.UInt8(120))
-        # return output
-        # return (preimage, direction)
-        # return testko
-        return valid_path_cells
+        # valid_path_cells = srt.get_valid_path_cells(neighbors_with_count)
 
-    @subroutine
-    def move(self) -> None:
-        "a"
+        # # output = op.mimc(op.MiMCConfigurations.BLS12_381Mp111, preimage)
+        # # a = UInt64(1)
+        # # return srt.check_valid_move(
+        # #     UInt64(1), self.box_game_grid[self.game_id], current_pos
+        # # )
 
-        # char = self.box_game_character[Txn.sender]  # index=6
-        # coords = srt.convert_grid_index_to_coords(char.current_pos)
+        return preimage.length
 
     @arc4.abimethod(allow_actions=["UpdateApplication"])
     def update(self) -> None:

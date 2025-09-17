@@ -18,6 +18,9 @@ INVALID_POS_INDEX: Final[str] = (
 INVALID_POS_COORDS: Final[str] = (
     "Invalid position coordinates. Ensure boh row and column indices are within valid range."
 )
+INVALID_MOVE_SEQUENCE: Final[str] = (
+    "Invalid move sequence. Ensure coordinate entries within the movement array are valid path cells."
+)
 INVALID_STAKE_AMOUNT: Final[str] = (
     "Invalid stake amount. Value must be a multiple of 1 and within permitted bounds."
 )
