@@ -345,11 +345,10 @@ def test_mimc_tester(
     # Define nested function that attemps to call the `mimc_tester` method
     def try_mimc_tester_txn(
         sender: SigningAccount,
-        direction: int,
+        position: tuple[int, int],
+        movement: list[tuple[int, int]],
         action: int,
-        current_pos: int,
-        # move_points: int,
-        move_sequence: list[tuple[int, int]],
+        direction: int,
         salt: int,
         note: bytes | str | None = None,
     ) -> None:
@@ -359,7 +358,7 @@ def test_mimc_tester(
             app=app,
             sender=sender,
             method=app.send.mimc_tester,
-            args=(direction, action, current_pos, move_sequence, salt),
+            args=(position, movement, action, direction, salt),
             max_fee=20_000,
             note=note,
             description="App Call Method Call Transaction: mimc_tester()",
@@ -368,10 +367,10 @@ def test_mimc_tester(
     # Call `try_mimc_tester_txn`
     try_mimc_tester_txn(
         sender=creator,
-        direction=0,
+        position=(0, 6),
+        movement=[(0, 7), (0, 8), (0, 9), (1, 9), (1, 10)],
         action=0,
-        current_pos=6,
-        move_sequence=[(1, 2), (3, 4), (5, 10)],
+        direction=2,
         salt=1234567888999,
         note=b'salvo:j{"method":"mimc_tester","concern":"txn.app_call;test_mimc_hashing"}',
     )

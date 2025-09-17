@@ -29,11 +29,11 @@ class GameState(arc4.Struct):
 # Define a struct that will store the game character object data
 class GameCharacter(arc4.Struct):
     id: arc4.UInt8
-    current_pos: arc4.UInt8
-    new_pos: arc4.UInt8
+    # action: arc4.UInt8
+    position: arc4.UInt8
     move_points: arc4.UInt8
+    new_pos: arc4.UInt8
     direction: arc4.UInt8
     # health: arc4.UInt8
-    # action: arc4.UInt8
     # range: arc4.UInt8
     # accuracy: arc4.UInt8

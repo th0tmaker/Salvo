@@ -1,6 +1,5 @@
 # smart_contracts/salvo/contract.py
 # NOTE: Consider pinching a percentage of the prize pot
-# NOTE: Implement challenge issue on chain, verify challenge with ed25519
 from algopy import (
     Account,
     ARC4Contract,
@@ -210,9 +209,7 @@ class Salvo(ARC4Contract, avm_version=11):
         ), err.INVALID_LOBBY_SIZE
 
         # Create a new box storage unit for the game grid w/ the current global game_id value as key
-        self.box_game_grid[self.game_id] = ta.GameGrid.from_bytes(
-            cst.ZEROED_MATRIX_BYTES
-        )
+        self.box_game_grid[self.game_id] = ta.GameGrid.from_bytes(cst.ZEROED_GRID_BYTES)
 
         # Create a new box storage unit for the game state w/ the current global game_id value as key
         self.box_game_state[self.game_id] = stc.GameState(
@@ -237,9 +234,9 @@ class Salvo(ARC4Contract, avm_version=11):
         self.box_game_character[Txn.sender] = stc.GameCharacter(
             arc4.UInt8(1),
             arc4.UInt8(6),
-            arc4.UInt8(22),
-            arc4.UInt8(10),
+            arc4.UInt8(5),
             arc4.UInt8(0),
+            arc4.UInt8(1),
         )
 
         # For game lobby box, replace the bytes starting at index 0 w/ the sender address bytes
@@ -262,50 +259,90 @@ class Salvo(ARC4Contract, avm_version=11):
     @arc4.abimethod
     def mimc_tester(
         self,
-        direction: arc4.UInt8,
+        position: ta.CoordsPair,
+        movement: ta.CoordsArray,
         action: arc4.UInt8,
-        current_pos: arc4.UInt8,
-        # move_points: arc4.UInt8,
-        move_sequence: ta.MoveSequence,
-        salt: arc4.UInt64,
-    ) -> tuple[bool, bool, bool, bool]:  # Bytes
-        # ) -> Bytes:
+        direction: arc4.UInt8,
+        salt: UInt64,
+    ) -> arc4.DynamicArray[ta.CoordsPair]:
+        # ) -> UInt64:
         # Ensure transaction has sufficient opcode budget
         ensure_budget(required_budget=5600, fee_source=OpUpFeeSource.GroupCredit)
 
-        assert direction <= 3, "direction must be [0, 1, 2, 3]"
-        assert action <= 1, "action must be [0, 1]"
+        # Extract row and column values from the given position argument
+        row, col = position.native
+
+        # Fail transaction unless the assertion below evaluates True
+        srt.assert_coords_in_range(row, col)
         assert (
-            current_pos == self.box_game_character[Txn.sender].current_pos
-        ), "cur pos mismatch"
+            srt.convert_grid_coords_to_index(row, col)
+            == self.box_game_character[Txn.sender].position
+        ), err.POSITION_MISMATCH
 
         assert (
-            current_pos <= cst.TOTAL_MATRIX_CELLS
-        ), "cur pos must not exceed TOTAL_GRID_CELLS=121"
+            movement.length <= self.box_game_character[Txn.sender].move_points
+        ), err.MOVEMENT_OVERFLOW
 
+        assert action <= 1, err.ACTION_OVERFLOW
+        assert direction <= 3, err.DIRECTION_OVERFLOW
+
+        # Initialize preimage byte array for MiMC hashing
         preimage = Bytes()
-        preimage += srt.u8_to_fr32(direction)
+
+        for new_coords in movement:
+            # Extract new row and new column values from the given movement argument
+            new_row, new_col = new_coords.native
+
+            # Fail transaction unless the assertion below evaluates True
+            srt.assert_coords_in_range(new_row, new_col)
+
+            # Find valid path cells from current position coords
+            neighbors_with_count = srt.find_neighbors_with_count(
+                UInt64(1),
+                self.box_game_grid,
+                position,
+            )
+
+            # Check if the new_coords cell is among the valid neighbors
+            is_move_valid = False
+            for i in urange(neighbors_with_count[1].native):
+                if new_coords == neighbors_with_count[0][i]:
+                    is_move_valid = True
+                    break
+
+            assert is_move_valid, "invalid move in move_sequence"
+
+            # Append the validated move to preimage
+            preimage += srt.u8_to_fr32(new_row)
+            preimage += srt.u8_to_fr32(new_col)
+
+            # Update position w/ new coords
+            position = new_coords
+
+        # Add rest of the scalar inputs
         preimage += srt.u8_to_fr32(action)
-        preimage += srt.u8_to_fr32(current_pos)
+        preimage += srt.u8_to_fr32(direction)
+        preimage += srt.u64_to_fr32(arc4.UInt64(salt))
 
-        for coord in move_sequence:
-            x, y = coord.native
-            assert x < cst.MATRIX_SIZE, "x out of range"
-            assert y < cst.MATRIX_SIZE, "y out of range"
-            preimage += srt.u8_to_fr32(x)
-            preimage += srt.u8_to_fr32(y)
+        # After processing the full sequence, find valid path cells of the last updated position
+        neighbors_with_count = srt.find_neighbors_with_count(
+            UInt64(1),
+            self.box_game_grid,
+            position,
+        )
 
-        preimage += srt.u64_to_fr32(salt)
-
+        valid_path_cells = srt.get_valid_path_cells(neighbors_with_count)
         # output = op.mimc(op.MiMCConfigurations.BLS12_381Mp111, preimage)
         # a = UInt64(1)
         # return srt.check_valid_move(
         #     UInt64(1), self.box_game_grid[self.game_id], current_pos
         # )
 
-        return srt.check_valid_move(UInt64(1), self.box_game_grid, arc4.UInt8(120))
+        # return srt.check_valid_move(UInt64(1), self.box_game_grid, arc4.UInt8(120))
         # return output
-        # return tuple[bool, bool, bool, bool]
+        # return (preimage, direction)
+        # return testko
+        return valid_path_cells
 
     @subroutine
     def move(self) -> None:
