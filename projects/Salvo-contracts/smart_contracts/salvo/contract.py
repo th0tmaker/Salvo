@@ -254,17 +254,21 @@ class Salvo(ARC4Contract, avm_version=11):
     @arc4.abimethod
     def mimc_tester(
         self,
+        # game_id: arc4.UInt64, <- Consider as mimc input
         position: ta.CoordsPair,
         movement: ta.CoordsArray,
         action: arc4.UInt8,
         direction: arc4.UInt8,
-        salt: UInt64,
-    ) -> UInt64:
+        salt: arc4.UInt64,
+    ) -> Bytes:
         # Ensure transaction has sufficient opcode budget
-        ensure_budget(required_budget=5600, fee_source=OpUpFeeSource.GroupCredit)
+        ensure_budget(required_budget=10500, fee_source=OpUpFeeSource.GroupCredit)
 
         # Extract row and column values from the given position argument
         row, col = position.native
+
+        # NOTE: Consider as mimc input
+        # assert game_id.native in self.box_game_grid, err.BOX_NOT_FOUND
 
         # Fail transaction unless the assertion below evaluates True
         srt.assert_coords_in_range(row, col)
@@ -286,6 +290,8 @@ class Salvo(ARC4Contract, avm_version=11):
 
         # Initialize a preimage byte array that will store scalar input ints for MiMC hashing
         preimage = Bytes()
+        preimage += srt.u64_to_fr32(arc4.UInt64(cst.DOMAIN_PREFIX))
+        # preimage += srt.u64_to_fr32(game_id) <- Consider as mimc input
 
         # Iterate through all the entries in the movement coords array
         for new_coords in movement:
@@ -298,7 +304,7 @@ class Salvo(ARC4Contract, avm_version=11):
         # Add rest of the scalar inputs
         preimage += srt.u8_to_fr32(action)
         preimage += srt.u8_to_fr32(direction)
-        preimage += srt.u64_to_fr32(arc4.UInt64(salt))
+        preimage += srt.u64_to_fr32(salt)
 
         # # After processing the full sequence, find valid path cells of the last updated position
         # neighbors_with_count = srt.get_neighbors_with_count(
@@ -309,13 +315,13 @@ class Salvo(ARC4Contract, avm_version=11):
 
         # valid_path_cells = srt.get_valid_path_cells(neighbors_with_count)
 
-        # # output = op.mimc(op.MiMCConfigurations.BLS12_381Mp111, preimage)
-        # # a = UInt64(1)
+        output = op.mimc(op.MiMCConfigurations.BLS12_381Mp111, preimage)
+
         # # return srt.check_valid_move(
         # #     UInt64(1), self.box_game_grid[self.game_id], current_pos
         # # )
 
-        return preimage.length
+        return output
 
     @arc4.abimethod(allow_actions=["UpdateApplication"])
     def update(self) -> None:

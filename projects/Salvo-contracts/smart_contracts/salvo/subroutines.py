@@ -96,16 +96,16 @@ def is_path_cell(
 def get_neighbors_with_count(
     game_id: UInt64,
     box_game_grid: BoxMap[UInt64, ta.GameGrid],
-    coords: ta.CoordsPair,
+    position: ta.CoordsPair,
 ) -> ta.NeighborsWithCount:
-    # Initialize neighbors array with zero-coordinate placeholders
-    placeholder_coords = ta.CoordsPair((arc4.UInt8(0), arc4.UInt8(0)))
+    # Initialize neighbors array with placeholder coords (use 255 as padding value)
+    placeholder_coords = ta.CoordsPair((arc4.UInt8(255), arc4.UInt8(255)))
     neighbors = ta.Neighbors(
         placeholder_coords, placeholder_coords, placeholder_coords, placeholder_coords
     )
 
     # Extract current position coordinates (row, col) and initialize valid neighbor counter
-    row, col = coords.native
+    row, col = position.native
     count = arc4.UInt8(0)
 
     # North: (row > 0) ensures row value isn't going below zero (out of grid bounds when moving North)

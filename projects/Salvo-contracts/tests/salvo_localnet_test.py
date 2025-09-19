@@ -378,17 +378,17 @@ def test_mimc_tester(
     # composer = app.new_group()
 
     # composer.mimc_tester(
-    #     args=(0, 0, 1, [(11, 22), (33, 44), (55, 66)], 1234567888999),
+    #     args=((0, 6), [(0, 7), (0, 8), (0, 9), (1, 9), (1, 10)], 0, 2, 1234567888999),
     #     params=CommonAppCallParams(
     #         sender=creator.address,
     #         signer=creator.signer,
-    #         max_fee=micro_algo(20_000),
+    #         max_fee=micro_algo(200_000),
     #     ),
     # )
 
     # result = composer.simulate(
-    #     allow_more_logs=True,
-    #     extra_opcode_budget=5_000,
+    #     # allow_more_logs=True,
+    #     extra_opcode_budget=100_000,
     # )
 
     # logger.info(result)
