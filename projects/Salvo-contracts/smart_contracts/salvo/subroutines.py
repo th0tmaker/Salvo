@@ -174,7 +174,7 @@ def u64_to_fr32(u: arc4.UInt64) -> Bytes:
 @subroutine
 def convert_grid_index_to_coords(i: arc4.UInt8) -> ta.CoordsPair:
     # Fail transaction unless the assertion below evaluates True
-    assert i.native < cst.TOTAL_GRID_CELLS, err.INVALID_POS_INDEX
+    assert i.native < cst.GRID_CELL_TOTAL, err.INVALID_POS_INDEX
 
     # Convert game grid flattened 1D array index into 2D coordinates
     row = i.native // cst.GRID_SIZE  # Compute 'row' from integer floor division
@@ -203,7 +203,7 @@ def get_grid_cell_value(
 ) -> arc4.UInt8:
     # Fail transaction unless the assertion below evaluates True
     assert game_id in box_game_grid, err.GAME_ID_NOT_FOUND
-    assert i.native < cst.TOTAL_GRID_CELLS, err.INVALID_POS_INDEX
+    assert i.native < cst.GRID_CELL_TOTAL, err.INVALID_POS_INDEX
 
     # Access the game grid box contents, at the given index, and return the byte value
     return box_game_grid[game_id][i.native]
@@ -219,7 +219,7 @@ def set_grid_cell_value_at_index(
 ) -> None:
     # Fail transaction unless the assertion below evaluates True
     assert game_id in box_game_grid, err.BOX_NOT_FOUND
-    assert i.native < cst.TOTAL_GRID_CELLS, err.INVALID_POS_INDEX
+    assert i.native < cst.GRID_CELL_TOTAL, err.INVALID_POS_INDEX
 
     # Access the game grid box contents, at the given index, and update the byte value
     box_game_grid[game_id][i.native] = value
