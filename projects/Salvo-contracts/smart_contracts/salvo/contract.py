@@ -212,7 +212,7 @@ class Salvo(ARC4Contract, avm_version=11):
         ), err.INVALID_LOBBY_SIZE
 
         # Create a new box storage unit for the game grid w/ the current global game_id value as key
-        self.box_game_grid[self.game_id] = ta.GameGrid.from_bytes(cst.ZEROED_GRID_BYTES)
+        self.box_game_grid[self.game_id] = ta.GameGrid.from_bytes(cst.GRID_ZEROED_BYTES)
 
         # Create a new box storage unit for the game state w/ the current global game_id value as key
         self.box_game_state[self.game_id] = stc.GameState(
