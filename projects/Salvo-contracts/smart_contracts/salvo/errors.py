@@ -42,9 +42,12 @@ INVALID_BOX_PAY_RECEIVER: Final[str] = (
 BOX_NOT_FOUND: Final[str] = (
     "Box not found. Ensure the box was created and still exists."
 )
-BOX_FOUND: Final[str] = "Box found. Ensure the does not exist already."
+BOX_FOUND: Final[str] = "Box found. Ensure the box does not exist."
 GAME_ID_NOT_FOUND: Final[str] = (
     "Game ID not found. Ensure the game was created and still exists."
+)
+PLAYER_NOT_FOUND: Final[str] = (
+    "Player not found. Ensure player address is inside the game lobby."
 )
 POSITION_MISMATCH: Final[str] = (
     "Position mismatch. Position value must be equal to expected corresponding state value."

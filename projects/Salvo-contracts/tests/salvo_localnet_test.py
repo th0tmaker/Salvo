@@ -34,7 +34,6 @@ from tests.utils import create_payment_txn, send_app_call_txn
 # Setup the logging.Logger
 logger = logging.getLogger(__name__)
 
-
 # Return an instance of the AlgorandSubscriber object to listen for network events
 # @pytest.fixture(scope="session")
 # def subscriber(algorand: AlgorandClient) -> AlgorandSubscriber:
@@ -308,7 +307,8 @@ def test_new_game(
     # Call `try_new_game_txn`
     try_new_game_txn(
         sender=creator,
-        stake_amount=2_000_000,
+        stake_amount=0,
+        # stake_amount=2_000_000,
         lobby_size=2,
         note=b'salvo:j{"method":"new_game","concern":"txn.app_call;create_new_game"}',
     )
@@ -334,61 +334,104 @@ def test_new_game(
     logger.info(f"Game lobby: {read_game_1_lobby_txn.abi_return}")
 
 
-# Test case for sending an app call transaction to the `get_box_user_registry` method of the smart contract
-def test_mimc_tester(
+# Test case for sending an app call transaction to the `commit_turn` method of the smart contract
+def test_commit_turn(
     creator: SigningAccount,
     apps: dict[str, SalvoClient],
 ) -> None:
     # Get smart contract application from from apps dict
     app = apps["salvo_client_1"]
 
-    # Define nested function that attemps to call the `mimc_tester` method
-    def try_mimc_tester_txn(
+    # Define nested function that attemps to call the `commit_turn` method
+    def try_commit_turn_txn(
         sender: SigningAccount,
-        position: tuple[int, int],
-        movement: list[tuple[int, int]],
-        action: int,
-        direction: int,
-        salt: int,
+        game_id: int,
+        turn_hash: int,
         note: bytes | str | None = None,
     ) -> None:
-        # Send app call transaction to execute smart contract method `mimc_tester`
+
+        # Send app call transaction to execute smart contract method `commit_turn`
         send_app_call_txn(
             logger=logger,
             app=app,
             sender=sender,
-            method=app.send.mimc_tester,
-            args=(position, movement, action, direction, salt),
-            max_fee=20_000,
+            method=app.send.commit_turn,
+            args=(game_id, turn_hash),
             note=note,
-            description="App Call Method Call Transaction: mimc_tester()",
+            description="App Call Method Call Transaction: commit_turn()",
         )
 
-    # Call `try_mimc_tester_txn`
-    try_mimc_tester_txn(
+    # Call `try_commit_turn_txn`
+    try_commit_turn_txn(
         sender=creator,
-        position=(0, 6),
-        movement=[(0, 7), (0, 8), (0, 9), (1, 9), (1, 10)],
-        action=0,
-        direction=2,
-        salt=1234567888999,
-        note=b'salvo:j{"method":"mimc_tester","concern":"txn.app_call;test_mimc_hashing"}',
+        game_id=1,
+        turn_hash=3367837694425617368410147401029684414564229674589041874024747373990573450785,
+        note=b'salvo:j{"method":"commit_turn","concern":"txn.app_call;user_turn_commitment"}',
     )
 
-    # composer = app.new_group()
+    box_c_value = app.state.box.box_game_character.get_value(
+        decode_address(creator.address)
+    )
 
-    # composer.mimc_tester(
-    #     args=((0, 6), [(0, 7), (0, 8), (0, 9), (1, 9), (1, 10)], 0, 2, 1234567888999),
-    #     params=CommonAppCallParams(
-    #         sender=creator.address,
-    #         signer=creator.signer,
-    #         max_fee=micro_algo(200_000),
-    #     ),
-    # )
+    # Log
+    logger.info(box_c_value)
 
-    # result = composer.simulate(
-    #     # allow_more_logs=True,
-    #     extra_opcode_budget=100_000,
-    # )
 
-    # logger.info(result)
+# # Test case for sending an app call transaction to the `get_box_user_registry` method of the smart contract
+# def test_mimc_tester(
+#     creator: SigningAccount,
+#     apps: dict[str, SalvoClient],
+# ) -> None:
+#     # Get smart contract application from from apps dict
+#     app = apps["salvo_client_1"]
+
+#     # Define nested function that attemps to call the `mimc_tester` method
+#     def try_mimc_tester_txn(
+#         sender: SigningAccount,
+#         position: tuple[int, int],
+#         movement: list[tuple[int, int]],
+#         action: int,
+#         direction: int,
+#         salt: int,
+#         note: bytes | str | None = None,
+#     ) -> None:
+#         # Send app call transaction to execute smart contract method `mimc_tester`
+#         send_app_call_txn(
+#             logger=logger,
+#             app=app,
+#             sender=sender,
+#             method=app.send.mimc_tester,
+#             args=(position, movement, action, direction, salt),
+#             max_fee=20_000,
+#             note=note,
+#             description="App Call Method Call Transaction: mimc_tester()",
+#         )
+
+#     # Call `try_mimc_tester_txn`
+#     try_mimc_tester_txn(
+#         sender=creator,
+#         position=(0, 6),
+#         movement=[(0, 7), (0, 8), (0, 9), (1, 9), (1, 10)],
+#         action=0,
+#         direction=2,
+#         salt=1234567888999,
+#         note=b'salvo:j{"method":"mimc_tester","concern":"txn.app_call;test_mimc_hashing"}',
+#     )
+
+#     # composer = app.new_group()
+
+#     # composer.mimc_tester(
+#     #     args=((0, 6), [(0, 7), (0, 8), (0, 9), (1, 9), (1, 10)], 0, 2, 1234567888999),
+#     #     params=CommonAppCallParams(
+#     #         sender=creator.address,
+#     #         signer=creator.signer,
+#     #         max_fee=micro_algo(200_000),
+#     #     ),
+#     # )
+
+#     # result = composer.simulate(
+#     #     # allow_more_logs=True,
+#     #     extra_opcode_budget=100_000,
+#     # )
+
+#     # logger.info(result)

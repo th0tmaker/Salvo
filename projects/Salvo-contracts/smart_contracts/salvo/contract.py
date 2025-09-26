@@ -1,6 +1,7 @@
 # smart_contracts/salvo/contract.py
 # NOTE: Consider pinching a percentage of the prize pot
 
+
 from algopy import (
     Account,
     ARC4Contract,
@@ -8,12 +9,10 @@ from algopy import (
     BoxRef,
     Bytes,
     Global,
-    OpUpFeeSource,
     TemplateVar,
     Txn,
     UInt64,
     arc4,
-    ensure_budget,
     gtxn,
     op,
     urange,
@@ -172,16 +171,17 @@ class Salvo(ARC4Contract, avm_version=11):
 
         assert box_g_pay.amount >= cst.BOX_G_COST, err.INSUFFICIENT_PAY_AMOUNT
         assert box_s_pay.amount >= cst.BOX_S_COST, err.INSUFFICIENT_PAY_AMOUNT
-        assert box_c_pay.amount >= cst.BOX_C_COST, err.INSUFFICIENT_PAY_AMOUNT
+        # assert box_c_pay.amount >= cst.BOX_C_COST, err.INSUFFICIENT_PAY_AMOUNT
         assert box_l_pay.amount >= self.calc_single_box_cost(
             key_size=arc4.UInt8(10),
             value_size=arc4.UInt16(cst.ADDRESS_SIZE * lobby_size.native),
         ), err.INSUFFICIENT_PAY_AMOUNT
-        assert (
-            stake_pay.amount >= cst.MIN_STAKE_AMOUNT
-            and stake_pay.amount <= cst.MAX_STAKE_AMOUNT
-            and stake_pay.amount % cst.MIN_STAKE_AMOUNT == 0
-        ), err.INVALID_STAKE_AMOUNT
+
+        # assert (
+        #     stake_pay.amount >= cst.MIN_STAKE_AMOUNT
+        #     and stake_pay.amount <= cst.MAX_STAKE_AMOUNT
+        #     and stake_pay.amount % cst.MIN_STAKE_AMOUNT == 0
+        # ), err.INVALID_STAKE_AMOUNT
 
         assert box_g_pay.sender == Txn.sender, err.INVALID_BOX_PAY_SENDER
         assert box_s_pay.sender == Txn.sender, err.INVALID_BOX_PAY_SENDER
@@ -235,11 +235,12 @@ class Salvo(ARC4Contract, avm_version=11):
 
         # Create a new box storage unit for the game character w/ the sender address value as key
         self.box_game_character[Txn.sender] = stc.GameCharacter(
-            arc4.UInt8(1),
+            arc4.Bool(False),  # noqa: FBT003
             arc4.UInt8(6),
             arc4.UInt8(5),
             arc4.UInt8(0),
             arc4.UInt8(1),
+            arc4.UInt256(0),
         )
 
         # For game lobby box, replace the bytes starting at index 0 w/ the sender address bytes
@@ -252,76 +253,164 @@ class Salvo(ARC4Contract, avm_version=11):
         self.game_id += 1
 
     @arc4.abimethod
-    def mimc_tester(
+    def commit_turn(
         self,
-        # game_id: arc4.UInt64, <- Consider as mimc input
-        position: ta.CoordsPair,
-        movement: ta.CoordsArray,
-        action: arc4.UInt8,
-        direction: arc4.UInt8,
-        salt: arc4.UInt64,
-    ) -> Bytes:
-        # Ensure transaction has sufficient opcode budget
-        ensure_budget(required_budget=10500, fee_source=OpUpFeeSource.GroupCredit)
-
-        # Extract row and column values from the given position argument
-        row, col = position.native
-
-        # NOTE: Consider as mimc input
-        # assert game_id.native in self.box_game_grid, err.BOX_NOT_FOUND
-
+        game_id: UInt64,
+        turn_hash: arc4.UInt256,
+    ) -> None:
         # Fail transaction unless the assertion below evaluates True
-        srt.assert_coords_in_range(row, col)
-        assert (
-            srt.convert_grid_coords_to_index(row, col)
-            == self.box_game_character[Txn.sender].position
-        ), err.POSITION_MISMATCH
+        # assert Global.group_size == 2, err.INVALID_GROUP_SIZE
+        assert game_id in self.box_game_state, err.GAME_ID_NOT_FOUND
+
+        assert srt.check_acc_in_game(
+            game_id=game_id,
+            account=Txn.sender,
+            box_game_lobby=self.box_game_lobby,
+            player_count=self.box_game_state[game_id].active_players.native,
+            clear_player=False,
+        ), err.PLAYER_NOT_FOUND
 
         assert (
-            movement.length <= self.box_game_character[Txn.sender].move_points
-        ), err.MOVEMENT_OVERFLOW
+            self.box_game_character[Txn.sender].has_committed_turn.native  # noqa: E712
+            == False
+        )
 
-        assert action <= 1, err.ACTION_OVERFLOW
-        assert direction <= 3, err.DIRECTION_OVERFLOW
+        self.box_game_character[Txn.sender].turn_hash = turn_hash
+        self.box_game_character[Txn.sender].has_committed_turn = arc4.Bool(
+            True  # noqa: FBT003
+        )
 
-        assert srt.is_move_sequence_valid(
-            UInt64(1), self.box_game_grid, position, movement.copy()
-        ), err.INVALID_MOVE_SEQUENCE
+    # @arc4.abimethod
+    # def reveal_turn(
+    #     self,
+    #     game_id: UInt64,
+    #     location: arc4.UInt8,
+    #     fatigue: arc4.UInt8,
+    #     pathing: ta.CoordsArray,
+    #     direction: arc4.UInt8,
+    #     action: arc4.UInt8,
+    #     salt: arc4.UInt64,
+    #     # turn_hash: arc4.UInt256,
+    # ) -> None:
+    #     # Fail transaction unless the assertion below evaluates True
+    #     # assert Global.group_size == 2, err.INVALID_GROUP_SIZE
+    #     assert game_id in self.box_game_state, err.GAME_ID_NOT_FOUND
 
-        # Initialize a preimage byte array that will store scalar input ints for MiMC hashing
-        preimage = Bytes()
-        preimage += srt.u64_to_fr32(arc4.UInt64(cst.DOMAIN_PREFIX))
-        # preimage += srt.u64_to_fr32(game_id) <- Consider as mimc input
+    #     assert srt.check_acc_in_game(
+    #         game_id=game_id,
+    #         account=Txn.sender,
+    #         box_game_lobby=self.box_game_lobby,
+    #         player_count=self.box_game_state[game_id].active_players.native,
+    #         clear_player=False,
+    #     ), err.PLAYER_NOT_FOUND
 
-        # Iterate through all the entries in the movement coords array
-        for new_coords in movement:
-            # Extract new row and new column values from the given movement argument
-            new_row, new_col = new_coords.native
-            # Append the validated move to preimage
-            preimage += srt.u8_to_fr32(new_row)
-            preimage += srt.u8_to_fr32(new_col)
+    #     assert (
+    #         self.box_game_character[Txn.sender].has_committed_turn.native  # noqa: E712
+    #         == False
+    #     )
 
-        # Add rest of the scalar inputs
-        preimage += srt.u8_to_fr32(action)
-        preimage += srt.u8_to_fr32(direction)
-        preimage += srt.u64_to_fr32(salt)
+    #     self.box_game_character[Txn.sender].has_committed_turn = arc4.Bool(
+    #         True  # noqa: FBT003
+    #     )
 
-        # # After processing the full sequence, find valid path cells of the last updated position
-        # neighbors_with_count = srt.get_neighbors_with_count(
-        #     UInt64(1),
-        #     self.box_game_grid,
-        #     position,
-        # )
+    # @arc4.abimethod
+    # def reveal_turn(
+    #     self,
+    #     game_id: UInt64,
+    #     location: arc4.UInt8,
+    #     fatigue: arc4.UInt8,
+    #     pathing: ta.CoordsArray,
+    #     direction: arc4.UInt8,
+    #     action: arc4.UInt8,
+    #     salt: arc4.UInt64,
+    # ) -> bool:
 
-        # valid_path_cells = srt.get_valid_path_cells(neighbors_with_count)
+    #     assert game_id in self.box_game_state, err.GAME_ID_NOT_FOUND
 
-        output = op.mimc(op.MiMCConfigurations.BLS12_381Mp111, preimage)
+    #     assert srt.check_acc_in_game(
+    #         game_id=game_id,
+    #         account=Txn.sender,
+    #         box_game_lobby=self.box_game_lobby,
+    #         player_count=self.box_game_state[game_id].active_players.native,
+    #         clear_player=False,
+    #     ), err.PLAYER_NOT_FOUND
 
-        # # return srt.check_valid_move(
-        # #     UInt64(1), self.box_game_grid[self.game_id], current_pos
-        # # )
+    #     assert (
+    #         self.box_game_character[Txn.sender].has_committed_turn.native  # noqa: E712
+    #         == True
+    #     )
 
-        return output
+    # # Ensure transaction has sufficient opcode budget
+    # ensure_budget(required_budget=10500, fee_source=OpUpFeeSource.GroupCredit)
+
+    # self.
+
+    # # Extract row and column values from the given position argument
+    # row, col = position.native
+
+    # # NOTE: Consider as mimc input
+    # # assert game_id.native in self.box_game_grid, err.BOX_NOT_FOUND
+
+    # # Fail transaction unless the assertion below evaluates True
+    # srt.assert_coords_in_range(row, col)
+    # assert (
+    #     srt.convert_grid_coords_to_index(row, col)
+    #     == self.box_game_character[Txn.sender].position
+    # ), err.POSITION_MISMATCH
+
+    # assert (
+    #     movement.length <= self.box_game_character[Txn.sender].move_points
+    # ), err.MOVEMENT_OVERFLOW
+
+    # assert action <= 1, err.ACTION_OVERFLOW
+    # assert direction <= 3, err.DIRECTION_OVERFLOW
+
+    # assert srt.is_move_sequence_valid(
+    #     UInt64(1), self.box_game_grid, position, movement.copy()
+    # ), err.INVALID_MOVE_SEQUENCE
+
+    # # Initialize a preimage byte array that will store scalar input ints for MiMC hashing
+    # preimage = Bytes()
+    # # preimage += srt.u64_to_fr32(arc4.UInt64(cst.DOMAIN_PREFIX))
+    # # # preimage += srt.u64_to_fr32(game_id) <- Consider as mimc input
+
+    # # # Iterate through all the entries in the movement coords array
+    # # for new_coords in movement:
+    # #     # Extract new row and new column values from the given movement argument
+    # #     new_row, new_col = new_coords.native
+    # #     # Append the validated move to preimage
+    # #     preimage += srt.u8_to_fr32(new_row)
+    # #     preimage += srt.u8_to_fr32(new_col)
+
+    # # # Add rest of the scalar inputs
+    # # preimage += srt.u8_to_fr32(action)
+    # # preimage += srt.u8_to_fr32(direction)
+    # # preimage += srt.u64_to_fr32(salt)
+
+    # preimage += srt.u8_to_fr32(arc4.UInt8(3))
+    # preimage += srt.u8_to_fr32(arc4.UInt8(1))
+    # preimage += srt.u8_to_fr32(arc4.UInt8(2))
+    # preimage += srt.u64_to_fr32(arc4.UInt64(22244674235551615))
+
+    # # # After processing the full sequence, find valid path cells of the last updated position
+    # # neighbors_with_count = srt.get_neighbors_with_count(
+    # #     UInt64(1),
+    # #     self.box_game_grid,
+    # #     position,
+    # # )
+
+    # # valid_path_cells = srt.get_valid_path_cells(neighbors_with_count)
+    # test = arc4.UInt256(
+    #     47153278636951250277202262925224176210829230980727422161852484596143340668883
+    # )
+
+    # output = op.mimc(op.MiMCConfigurations.BLS12_381Mp111, preimage)
+
+    # # # return srt.check_valid_move(
+    # # #     UInt64(1), self.box_game_grid[self.game_id], current_pos
+    # # # )
+
+    # return test.bytes == output
 
     @arc4.abimethod(allow_actions=["UpdateApplication"])
     def update(self) -> None:

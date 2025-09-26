@@ -3,26 +3,26 @@
 
 // smart_contracts.salvo.contract.Salvo.__algopy_entrypoint_with_init() -> uint64:
 main:
-    intcblock 1 0 2 8 1000000 TMPL_GEN_UNIX TMPL_UPDATABLE
-    bytecblock 0x00 0x151f7c75 "g_" "c_" "r_" "game_id" 0x01 "s_" "l_" 0x068101 0x0000000000000000
+    intcblock 1 0 2 8 TMPL_GEN_UNIX TMPL_UPDATABLE
+    bytecblock 0x00 0x151f7c75 "g_" "c_" "r_" "s_" "l_" "game_id" 0x01 0x068101 0xffffffffffffffff
     // smart_contracts/salvo/contract.py:29-30
     // # Smart contract class
     // class Salvo(ARC4Contract, avm_version=11):
     txn NumAppArgs
-    bz main_after_if_else@19
-    pushbytess 0x6333cd9d 0xb66d2f56 0x8996bb37 0x5381d6a8 0x7815fe41 0x0b42d12a 0xbbfa8e01 0xf85053ad 0x06f0d132 0x5be219f0 0x3ffbca24 0x81e90542 0xf4b7eabb 0xa0e81872 // method "calc_single_box_cost(uint8,uint16)uint64", method "read_gen_unix()uint64", method "read_grid_cell_value_by_index(uint64,uint8)uint8", method "read_grid_cell_value_at_coords(uint64,uint8,uint8)uint8", method "does_box_user_registry_exist(account)bool", method "does_box_game_grid_exist(uint64)bool", method "does_box_game_state_exist(uint64)bool", method "does_box_game_character_exist(account)bool", method "read_box_game_lobby(uint64)address[]", method "generate()void", method "get_box_user_registry(pay)void", method "new_game(pay,pay,pay,pay,pay,uint8)void", method "mimc_tester((uint8,uint8),(uint8,uint8)[],uint8,uint8,uint64)byte[]", method "update()void"
+    bz main_after_if_else@20
+    pushbytess 0x6333cd9d 0xb66d2f56 0x8996bb37 0x5381d6a8 0x7815fe41 0x0b42d12a 0xbbfa8e01 0xf85053ad 0x06f0d132 0x5be219f0 0x3ffbca24 0x81e90542 0xfd1cd76a 0xd50235a0 0xa0e81872 // method "calc_single_box_cost(uint8,uint16)uint64", method "read_gen_unix()uint64", method "read_grid_cell_value_by_index(uint64,uint8)uint8", method "read_grid_cell_value_at_coords(uint64,uint8,uint8)uint8", method "does_box_user_registry_exist(account)bool", method "does_box_game_grid_exist(uint64)bool", method "does_box_game_state_exist(uint64)bool", method "does_box_game_character_exist(account)bool", method "read_box_game_lobby(uint64)address[]", method "generate()void", method "get_box_user_registry(pay)void", method "new_game(pay,pay,pay,pay,pay,uint8)void", method "commit_turn(uint64,uint256)void", method "mimc_tester((uint8,uint8),(uint8,uint8)[],uint8,uint8,uint64)bool", method "update()void"
     txna ApplicationArgs 0
-    match main_calc_single_box_cost_route@5 main_read_gen_unix_route@6 main_read_grid_cell_value_by_index_route@7 main_read_grid_cell_value_at_coords_route@8 main_does_box_user_registry_exist_route@9 main_does_box_game_grid_exist_route@10 main_does_box_game_state_exist_route@11 main_does_box_game_character_exist_route@12 main_read_box_game_lobby_route@13 main_generate_route@14 main_get_box_user_registry_route@15 main_new_game_route@16 main_mimc_tester_route@17 main_update_route@18
+    match main_calc_single_box_cost_route@5 main_read_gen_unix_route@6 main_read_grid_cell_value_by_index_route@7 main_read_grid_cell_value_at_coords_route@8 main_does_box_user_registry_exist_route@9 main_does_box_game_grid_exist_route@10 main_does_box_game_state_exist_route@11 main_does_box_game_character_exist_route@12 main_read_box_game_lobby_route@13 main_generate_route@14 main_get_box_user_registry_route@15 main_new_game_route@16 main_commit_turn_route@17 main_mimc_tester_route@18 main_update_route@19
 
-main_after_if_else@19:
+main_after_if_else@20:
     // smart_contracts/salvo/contract.py:29-30
     // # Smart contract class
     // class Salvo(ARC4Contract, avm_version=11):
     intc_1 // 0
     return
 
-main_update_route@18:
-    // smart_contracts/salvo/contract.py:321
+main_update_route@19:
+    // smart_contracts/salvo/contract.py:367
     // @arc4.abimethod(allow_actions=["UpdateApplication"])
     txn OnCompletion
     pushint 4 // UpdateApplication
@@ -34,8 +34,8 @@ main_update_route@18:
     intc_0 // 1
     return
 
-main_mimc_tester_route@17:
-    // smart_contracts/salvo/contract.py:254
+main_mimc_tester_route@18:
+    // smart_contracts/salvo/contract.py:287
     // @arc4.abimethod
     txn OnCompletion
     !
@@ -50,20 +50,37 @@ main_mimc_tester_route@17:
     txna ApplicationArgs 3
     txna ApplicationArgs 4
     txna ApplicationArgs 5
-    btoi
-    // smart_contracts/salvo/contract.py:254
+    // smart_contracts/salvo/contract.py:287
     // @arc4.abimethod
     callsub mimc_tester
-    dup
-    len
-    itob
-    extract 6 2
-    swap
-    concat
+    bytec_0 // 0x00
+    intc_1 // 0
+    uncover 2
+    setbit
     bytec_1 // 0x151f7c75
     swap
     concat
     log
+    intc_0 // 1
+    return
+
+main_commit_turn_route@17:
+    // smart_contracts/salvo/contract.py:256
+    // @arc4.abimethod
+    txn OnCompletion
+    !
+    assert // OnCompletion is not NoOp
+    txn ApplicationID
+    assert // can only call when not creating
+    // smart_contracts/salvo/contract.py:29-30
+    // # Smart contract class
+    // class Salvo(ARC4Contract, avm_version=11):
+    txna ApplicationArgs 1
+    btoi
+    txna ApplicationArgs 2
+    // smart_contracts/salvo/contract.py:256
+    // @arc4.abimethod
+    callsub commit_turn
     intc_0 // 1
     return
 
@@ -371,7 +388,7 @@ main_read_gen_unix_route@6:
     assert // can only call when not creating
     // smart_contracts/salvo/contract.py:60
     // return TemplateVar[UInt64]("GEN_UNIX")
-    intc 5 // TMPL_GEN_UNIX
+    intc 4 // TMPL_GEN_UNIX
     // smart_contracts/salvo/contract.py:57-58
     // # READ-ONLY: Return the app genesis timestamp in Unix format
     // @arc4.abimethod(readonly=True)
@@ -641,7 +658,7 @@ does_box_game_state_exist:
     // return self.box_game_state.maybe(game_id)[1]
     frame_dig -1
     itob
-    bytec 7 // "s_"
+    bytec 5 // "s_"
     swap
     concat
     box_get
@@ -680,7 +697,7 @@ read_box_game_lobby:
     // assert game_id in self.box_game_lobby, err.GAME_ID_NOT_FOUND
     frame_dig -1
     itob
-    bytec 8 // "l_"
+    bytec 6 // "l_"
     swap
     concat
     dup
@@ -773,7 +790,7 @@ generate:
     // smart_contracts/salvo/contract.py:133-134
     // # Set Global State variables to their default starting values
     // self.game_id = UInt64(1)
-    bytec 5 // "game_id"
+    bytec 7 // "game_id"
     intc_0 // 1
     app_global_put
     retsub
@@ -803,7 +820,7 @@ get_box_user_registry:
     box_len
     bury 1
     !
-    assert // Box found. Ensure the does not exist already.
+    assert // Box found. Ensure the box does not exist.
     // smart_contracts/salvo/contract.py:146-147
     // # assert box_r_pay.amount == cst.BOX_R_COST, err.INSUFFICIENT_PAY_AMOUNT
     // assert box_r_pay.sender == Txn.sender, err.INVALID_BOX_PAY_SENDER
@@ -894,14 +911,8 @@ new_game:
     pushint 27700 // 27700
     >=
     assert // Insufficient payment amount. Value is not enough to cover the minimum requirements.
-    // smart_contracts/salvo/contract.py:175
-    // assert box_c_pay.amount >= cst.BOX_C_COST, err.INSUFFICIENT_PAY_AMOUNT
-    frame_dig -4
-    gtxns Amount
-    pushint 18100 // 18100
-    >=
-    assert // Insufficient payment amount. Value is not enough to cover the minimum requirements.
-    // smart_contracts/salvo/contract.py:176
+    // smart_contracts/salvo/contract.py:175-176
+    // # assert box_c_pay.amount >= cst.BOX_C_COST, err.INSUFFICIENT_PAY_AMOUNT
     // assert box_l_pay.amount >= self.calc_single_box_cost(
     frame_dig -3
     gtxns Amount
@@ -925,7 +936,8 @@ new_game:
     // smart_contracts/salvo/contract.py:177
     // key_size=arc4.UInt8(10),
     pushbytes 0x0a
-    // smart_contracts/salvo/contract.py:176-179
+    // smart_contracts/salvo/contract.py:175-179
+    // # assert box_c_pay.amount >= cst.BOX_C_COST, err.INSUFFICIENT_PAY_AMOUNT
     // assert box_l_pay.amount >= self.calc_single_box_cost(
     //     key_size=arc4.UInt8(10),
     //     value_size=arc4.UInt16(cst.ADDRESS_SIZE * lobby_size.native),
@@ -934,183 +946,141 @@ new_game:
     callsub calc_single_box_cost
     >=
     assert // Insufficient payment amount. Value is not enough to cover the minimum requirements.
-    // smart_contracts/salvo/contract.py:181
-    // stake_pay.amount >= cst.MIN_STAKE_AMOUNT
-    frame_dig -2
-    gtxns Amount
-    dup
-    intc 4 // 1000000
-    >=
-    // smart_contracts/salvo/contract.py:181-183
-    // stake_pay.amount >= cst.MIN_STAKE_AMOUNT
-    // and stake_pay.amount <= cst.MAX_STAKE_AMOUNT
-    // and stake_pay.amount % cst.MIN_STAKE_AMOUNT == 0
-    bz new_game_bool_false@4
-    // smart_contracts/salvo/contract.py:182
-    // and stake_pay.amount <= cst.MAX_STAKE_AMOUNT
-    frame_dig 2
-    pushint 500000000 // 500000000
-    <=
-    // smart_contracts/salvo/contract.py:181-183
-    // stake_pay.amount >= cst.MIN_STAKE_AMOUNT
-    // and stake_pay.amount <= cst.MAX_STAKE_AMOUNT
-    // and stake_pay.amount % cst.MIN_STAKE_AMOUNT == 0
-    bz new_game_bool_false@4
-    // smart_contracts/salvo/contract.py:183
-    // and stake_pay.amount % cst.MIN_STAKE_AMOUNT == 0
-    frame_dig 2
-    intc 4 // 1000000
-    %
-    // smart_contracts/salvo/contract.py:181-183
-    // stake_pay.amount >= cst.MIN_STAKE_AMOUNT
-    // and stake_pay.amount <= cst.MAX_STAKE_AMOUNT
-    // and stake_pay.amount % cst.MIN_STAKE_AMOUNT == 0
-    bnz new_game_bool_false@4
-    intc_0 // 1
-
-new_game_bool_merge@5:
-    // smart_contracts/salvo/contract.py:180-184
-    // assert (
-    //     stake_pay.amount >= cst.MIN_STAKE_AMOUNT
-    //     and stake_pay.amount <= cst.MAX_STAKE_AMOUNT
-    //     and stake_pay.amount % cst.MIN_STAKE_AMOUNT == 0
-    // ), err.INVALID_STAKE_AMOUNT
-    assert // Invalid stake amount. Value must be a multiple of 1 and within permitted bounds.
-    // smart_contracts/salvo/contract.py:186
+    // smart_contracts/salvo/contract.py:187
     // assert box_g_pay.sender == Txn.sender, err.INVALID_BOX_PAY_SENDER
     frame_dig -6
     gtxns Sender
     txn Sender
     ==
     assert // Box payment sender address must match transaction sender address.
-    // smart_contracts/salvo/contract.py:187
+    // smart_contracts/salvo/contract.py:188
     // assert box_s_pay.sender == Txn.sender, err.INVALID_BOX_PAY_SENDER
     frame_dig -5
     gtxns Sender
     txn Sender
     ==
     assert // Box payment sender address must match transaction sender address.
-    // smart_contracts/salvo/contract.py:188
+    // smart_contracts/salvo/contract.py:189
     // assert box_c_pay.sender == Txn.sender, err.INVALID_BOX_PAY_SENDER
     frame_dig -4
     gtxns Sender
     txn Sender
     ==
     assert // Box payment sender address must match transaction sender address.
-    // smart_contracts/salvo/contract.py:189
+    // smart_contracts/salvo/contract.py:190
     // assert box_l_pay.sender == Txn.sender, err.INVALID_BOX_PAY_SENDER
     frame_dig -3
     gtxns Sender
     txn Sender
     ==
     assert // Box payment sender address must match transaction sender address.
-    // smart_contracts/salvo/contract.py:190
+    // smart_contracts/salvo/contract.py:191
     // assert stake_pay.sender == Txn.sender, err.INVALID_STAKE_PAY_SENDER
     frame_dig -2
     gtxns Sender
     txn Sender
     ==
     assert // Stake payment sender address must match sender address.
-    // smart_contracts/salvo/contract.py:193
+    // smart_contracts/salvo/contract.py:194
     // box_g_pay.receiver == Global.current_application_address
     frame_dig -6
     gtxns Receiver
     global CurrentApplicationAddress
     ==
-    // smart_contracts/salvo/contract.py:192-194
+    // smart_contracts/salvo/contract.py:193-195
     // assert (
     //     box_g_pay.receiver == Global.current_application_address
     // ), err.INVALID_BOX_PAY_RECEIVER
     assert // Box payment receiver address must match application address.
-    // smart_contracts/salvo/contract.py:196
+    // smart_contracts/salvo/contract.py:197
     // box_s_pay.receiver == Global.current_application_address
     frame_dig -5
     gtxns Receiver
     global CurrentApplicationAddress
     ==
-    // smart_contracts/salvo/contract.py:195-197
+    // smart_contracts/salvo/contract.py:196-198
     // assert (
     //     box_s_pay.receiver == Global.current_application_address
     // ), err.INVALID_BOX_PAY_RECEIVER
     assert // Box payment receiver address must match application address.
-    // smart_contracts/salvo/contract.py:199
+    // smart_contracts/salvo/contract.py:200
     // box_c_pay.receiver == Global.current_application_address
     frame_dig -4
     gtxns Receiver
     global CurrentApplicationAddress
     ==
-    // smart_contracts/salvo/contract.py:198-200
+    // smart_contracts/salvo/contract.py:199-201
     // assert (
     //     box_c_pay.receiver == Global.current_application_address
     // ), err.INVALID_BOX_PAY_RECEIVER
     assert // Box payment receiver address must match application address.
-    // smart_contracts/salvo/contract.py:202
+    // smart_contracts/salvo/contract.py:203
     // box_l_pay.receiver == Global.current_application_address
     frame_dig -3
     gtxns Receiver
     global CurrentApplicationAddress
     ==
-    // smart_contracts/salvo/contract.py:201-203
+    // smart_contracts/salvo/contract.py:202-204
     // assert (
     //     box_l_pay.receiver == Global.current_application_address
     // ), err.INVALID_BOX_PAY_RECEIVER
     assert // Box payment receiver address must match application address.
-    // smart_contracts/salvo/contract.py:205
+    // smart_contracts/salvo/contract.py:206
     // stake_pay.receiver == Global.current_application_address
     frame_dig -2
     gtxns Receiver
     global CurrentApplicationAddress
     ==
-    // smart_contracts/salvo/contract.py:204-206
+    // smart_contracts/salvo/contract.py:205-207
     // assert (
     //     stake_pay.receiver == Global.current_application_address
     // ), err.INVALID_BOX_PAY_RECEIVER
     assert // Box payment receiver address must match application address.
-    // smart_contracts/salvo/contract.py:209
+    // smart_contracts/salvo/contract.py:210
     // lobby_size >= cst.MIN_LOBBY_SIZE
     frame_dig -1
     pushbytes 0x02
     b>=
-    // smart_contracts/salvo/contract.py:209-211
+    // smart_contracts/salvo/contract.py:210-212
     // lobby_size >= cst.MIN_LOBBY_SIZE
     // and lobby_size <= cst.MAX_LOBBY_SIZE
     // and lobby_size.native % 2 == 0
-    bz new_game_bool_false@9
-    // smart_contracts/salvo/contract.py:210
+    bz new_game_bool_false@4
+    // smart_contracts/salvo/contract.py:211
     // and lobby_size <= cst.MAX_LOBBY_SIZE
     frame_dig -1
     pushbytes 0x04
     b<=
-    // smart_contracts/salvo/contract.py:209-211
+    // smart_contracts/salvo/contract.py:210-212
     // lobby_size >= cst.MIN_LOBBY_SIZE
     // and lobby_size <= cst.MAX_LOBBY_SIZE
     // and lobby_size.native % 2 == 0
-    bz new_game_bool_false@9
-    // smart_contracts/salvo/contract.py:211
+    bz new_game_bool_false@4
+    // smart_contracts/salvo/contract.py:212
     // and lobby_size.native % 2 == 0
     frame_dig 0
     intc_2 // 2
     %
-    // smart_contracts/salvo/contract.py:209-211
+    // smart_contracts/salvo/contract.py:210-212
     // lobby_size >= cst.MIN_LOBBY_SIZE
     // and lobby_size <= cst.MAX_LOBBY_SIZE
     // and lobby_size.native % 2 == 0
-    bnz new_game_bool_false@9
+    bnz new_game_bool_false@4
     intc_0 // 1
 
-new_game_bool_merge@10:
-    // smart_contracts/salvo/contract.py:208-212
+new_game_bool_merge@5:
+    // smart_contracts/salvo/contract.py:209-213
     // assert (
     //     lobby_size >= cst.MIN_LOBBY_SIZE
     //     and lobby_size <= cst.MAX_LOBBY_SIZE
     //     and lobby_size.native % 2 == 0
     // ), err.INVALID_LOBBY_SIZE
     assert // Invalid Lobby size. Value must be an even number and within permitted bounds.
-    // smart_contracts/salvo/contract.py:214-215
+    // smart_contracts/salvo/contract.py:215-216
     // # Create a new box storage unit for the game grid w/ the current global game_id value as key
     // self.box_game_grid[self.game_id] = ta.GameGrid.from_bytes(cst.ZEROED_GRID_BYTES)
     intc_1 // 0
-    bytec 5 // "game_id"
+    bytec 7 // "game_id"
     app_global_get_ex
     assert // check self.game_id exists
     dup
@@ -1120,23 +1090,24 @@ new_game_bool_merge@10:
     concat
     pushbytes 0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
     box_put
-    // smart_contracts/salvo/contract.py:224
+    // smart_contracts/salvo/contract.py:225
     // expiry_ts=arc4.UInt64(Global.latest_timestamp + cst.PHASE_EXPIRY_INTERVAL),
     global LatestTimestamp
     pushint 1200 // 1200
     +
     itob
-    // smart_contracts/salvo/contract.py:225
-    // prize_pot=arc4.UInt64(stake_pay.amount),
-    frame_dig 2
-    itob
     // smart_contracts/salvo/contract.py:226
+    // prize_pot=arc4.UInt64(stake_pay.amount),
+    frame_dig -2
+    gtxns Amount
+    itob
+    // smart_contracts/salvo/contract.py:227
     // admin_address=arc4.Address(Txn.sender),
     txn Sender
-    // smart_contracts/salvo/contract.py:219
+    // smart_contracts/salvo/contract.py:220
     // staking_closed=arc4.Bool(False),  # noqa: FBT003
     bytec_0 // 0x00
-    // smart_contracts/salvo/contract.py:217-227
+    // smart_contracts/salvo/contract.py:218-228
     // # Create a new box storage unit for the game state w/ the current global game_id value as key
     // self.box_game_state[self.game_id] = stc.GameState(
     //     staking_closed=arc4.Bool(False),  # noqa: FBT003
@@ -1150,10 +1121,10 @@ new_game_bool_merge@10:
     // )
     frame_dig -1
     concat
-    // smart_contracts/salvo/contract.py:222
+    // smart_contracts/salvo/contract.py:223
     // active_players=arc4.UInt8(1),
-    bytec 6 // 0x01
-    // smart_contracts/salvo/contract.py:217-227
+    bytec 8 // 0x01
+    // smart_contracts/salvo/contract.py:218-228
     // # Create a new box storage unit for the game state w/ the current global game_id value as key
     // self.box_game_state[self.game_id] = stc.GameState(
     //     staking_closed=arc4.Bool(False),  # noqa: FBT003
@@ -1166,10 +1137,10 @@ new_game_bool_merge@10:
     //     admin_address=arc4.Address(Txn.sender),
     // )
     concat
-    // smart_contracts/salvo/contract.py:223
+    // smart_contracts/salvo/contract.py:224
     // box_l_start_pos=arc4.UInt16(cst.ADDRESS_SIZE),
     pushbytes 0x0020
-    // smart_contracts/salvo/contract.py:217-227
+    // smart_contracts/salvo/contract.py:218-228
     // # Create a new box storage unit for the game state w/ the current global game_id value as key
     // self.box_game_state[self.game_id] = stc.GameState(
     //     staking_closed=arc4.Bool(False),  # noqa: FBT003
@@ -1188,13 +1159,13 @@ new_game_bool_merge@10:
     concat
     swap
     concat
-    // smart_contracts/salvo/contract.py:217-218
+    // smart_contracts/salvo/contract.py:218-219
     // # Create a new box storage unit for the game state w/ the current global game_id value as key
     // self.box_game_state[self.game_id] = stc.GameState(
-    bytec 7 // "s_"
+    bytec 5 // "s_"
     dig 2
     concat
-    // smart_contracts/salvo/contract.py:217-227
+    // smart_contracts/salvo/contract.py:218-228
     // # Create a new box storage unit for the game state w/ the current global game_id value as key
     // self.box_game_state[self.game_id] = stc.GameState(
     //     staking_closed=arc4.Bool(False),  # noqa: FBT003
@@ -1208,20 +1179,20 @@ new_game_bool_merge@10:
     // )
     swap
     box_put
-    // smart_contracts/salvo/contract.py:231-234
+    // smart_contracts/salvo/contract.py:232-235
     // # Create a new box storage unit for the game lobby w/ the current global game_id value as key
     // self.box_game_lobby[self.game_id] = op.bzero(
     //     cst.ADDRESS_SIZE * lobby_size.native
     // )  # Assign zeroed bytes to store all player addresses in lobby (32 bytes per player)
     frame_dig 1
     bzero
-    // smart_contracts/salvo/contract.py:231-232
+    // smart_contracts/salvo/contract.py:232-233
     // # Create a new box storage unit for the game lobby w/ the current global game_id value as key
     // self.box_game_lobby[self.game_id] = op.bzero(
-    bytec 8 // "l_"
+    bytec 6 // "l_"
     uncover 2
     concat
-    // smart_contracts/salvo/contract.py:231-234
+    // smart_contracts/salvo/contract.py:232-235
     // # Create a new box storage unit for the game lobby w/ the current global game_id value as key
     // self.box_game_lobby[self.game_id] = op.bzero(
     //     cst.ADDRESS_SIZE * lobby_size.native
@@ -1232,70 +1203,230 @@ new_game_bool_merge@10:
     dup
     uncover 2
     box_put
-    // smart_contracts/salvo/contract.py:236-237
+    // smart_contracts/salvo/contract.py:237-238
     // # Create a new box storage unit for the game character w/ the sender address value as key
     // self.box_game_character[Txn.sender] = stc.GameCharacter(
     bytec_3 // "c_"
     txn Sender
     concat
-    // smart_contracts/salvo/contract.py:236-243
+    // smart_contracts/salvo/contract.py:237-245
     // # Create a new box storage unit for the game character w/ the sender address value as key
     // self.box_game_character[Txn.sender] = stc.GameCharacter(
-    //     arc4.UInt8(1),
+    //     arc4.Bool(False),  # noqa: FBT003
     //     arc4.UInt8(6),
     //     arc4.UInt8(5),
     //     arc4.UInt8(0),
     //     arc4.UInt8(1),
+    //     arc4.UInt256(0),
     // )
-    pushbytes 0x0106050001
+    pushbytes 0x00060500010000000000000000000000000000000000000000000000000000000000000000
     box_put
-    // smart_contracts/salvo/contract.py:249
+    // smart_contracts/salvo/contract.py:251
     // game_lobby_bref.replace(0, Txn.sender.bytes)
     intc_1 // 0
     txn Sender
     box_replace
-    // smart_contracts/salvo/contract.py:251-252
+    // smart_contracts/salvo/contract.py:253-254
     // # Increment game id by 1 for next new game instance
     // self.game_id += 1
     intc_0 // 1
     +
-    bytec 5 // "game_id"
+    bytec 7 // "game_id"
     swap
     app_global_put
     retsub
-
-new_game_bool_false@9:
-    intc_1 // 0
-    b new_game_bool_merge@10
 
 new_game_bool_false@4:
     intc_1 // 0
     b new_game_bool_merge@5
 
 
-// smart_contracts.salvo.contract.Salvo.mimc_tester(position: bytes, movement: bytes, action: bytes, direction: bytes, salt: uint64) -> bytes:
+// smart_contracts.salvo.contract.Salvo.commit_turn(game_id: uint64, turn_hash: bytes) -> void:
+commit_turn:
+    // smart_contracts/salvo/contract.py:256-264
+    // @arc4.abimethod
+    // def commit_turn(
+    //     self,
+    //     game_id: UInt64,
+    //     # grid: Bytes,
+    //     # location: arc4.UInt8,
+    //     # fatigue: arc4.UInt8,
+    //     turn_hash: arc4.UInt256,
+    // ) -> None:
+    proto 2 0
+    pushbytes ""
+    // smart_contracts/salvo/contract.py:265-267
+    // # Fail transaction unless the assertion below evaluates True
+    // # assert Global.group_size == 2, err.INVALID_GROUP_SIZE
+    // assert game_id in self.box_game_state, err.GAME_ID_NOT_FOUND
+    frame_dig -2
+    itob
+    dup
+    bytec 5 // "s_"
+    swap
+    concat
+    dup
+    box_len
+    bury 1
+    assert // Game ID not found. Ensure the game was created and still exists.
+    // smart_contracts/salvo/contract.py:271
+    // account=Txn.sender,
+    txn Sender
+    swap
+    // smart_contracts/salvo/contract.py:273
+    // player_count=self.box_game_state[game_id].active_players.native,
+    box_get
+    assert // check self.box_game_state entry exists
+    intc_2 // 2
+    getbyte
+    // smart_contracts/salvo/subroutines.py:251-252
+    // # Calculate total byte length to iterate over based on player count and address size
+    // game_lobby_length = player_count * cst.ADDRESS_SIZE
+    pushint 32 // 32
+    *
+    // smart_contracts/salvo/subroutines.py:254-255
+    // # Initialize flag to track if account is found in game
+    // acc_in_game = False
+    intc_1 // 0
+    // smart_contracts/salvo/subroutines.py:257-258
+    // # Iterate through the lobby byte array length in 32-byte chunks (one address per chunk)
+    // for i in urange(0, game_lobby_length, cst.ADDRESS_SIZE):
+    dup
+
+commit_turn_for_header@2:
+    // smart_contracts/salvo/subroutines.py:257-258
+    // # Iterate through the lobby byte array length in 32-byte chunks (one address per chunk)
+    // for i in urange(0, game_lobby_length, cst.ADDRESS_SIZE):
+    frame_dig 5
+    frame_dig 3
+    <
+    frame_dig 4
+    frame_bury 0
+    bz commit_turn_after_for@8
+    // smart_contracts/salvo/contract.py:272
+    // box_game_lobby=self.box_game_lobby,
+    bytec 6 // "l_"
+    // smart_contracts/salvo/subroutines.py:259-260
+    // # Extract the 32-byte player address at start index i
+    // player_addr_bytes = op.extract(box_game_lobby[game_id], i, cst.ADDRESS_SIZE)
+    frame_dig 1
+    concat
+    box_get
+    assert // check BoxMap entry exists
+    frame_dig 5
+    pushint 32 // 32
+    extract3
+    // smart_contracts/salvo/subroutines.py:262-263
+    // # Check if the extracted player address bytes match up with the account bytes
+    // if account.bytes == player_addr_bytes:
+    frame_dig 2
+    ==
+    bz commit_turn_after_if_else@7
+    // smart_contracts/salvo/subroutines.py:264
+    // acc_in_game = True
+    intc_0 // 1
+    frame_bury 0
+
+commit_turn_after_for@8:
+    frame_dig 0
+    // smart_contracts/salvo/contract.py:269-275
+    // assert srt.check_acc_in_game(
+    //     game_id=game_id,
+    //     account=Txn.sender,
+    //     box_game_lobby=self.box_game_lobby,
+    //     player_count=self.box_game_state[game_id].active_players.native,
+    //     clear_player=False,
+    // ), err.PLAYER_NOT_FOUND
+    assert // Player not found. Ensure player address is inside the game lobby.
+    // smart_contracts/salvo/contract.py:278
+    // self.box_game_character[Txn.sender].has_committed_turn.native  # noqa: E712
+    bytec_3 // "c_"
+    txn Sender
+    concat
+    box_get
+    assert // check self.box_game_character entry exists
+    intc_1 // 0
+    getbit
+    bytec_0 // 0x00
+    intc_1 // 0
+    uncover 2
+    setbit
+    intc_1 // 0
+    getbit
+    // smart_contracts/salvo/contract.py:278-279
+    // self.box_game_character[Txn.sender].has_committed_turn.native  # noqa: E712
+    // == False
+    !
+    // smart_contracts/salvo/contract.py:277-280
+    // assert (
+    //     self.box_game_character[Txn.sender].has_committed_turn.native  # noqa: E712
+    //     == False
+    // )
+    assert
+    // smart_contracts/salvo/contract.py:282
+    // self.box_game_character[Txn.sender].turn_hash = turn_hash
+    bytec_3 // "c_"
+    txn Sender
+    concat
+    dup
+    box_get
+    assert // check self.box_game_character entry exists
+    frame_dig -1
+    replace2 5
+    box_put
+    // smart_contracts/salvo/contract.py:283
+    // self.box_game_character[Txn.sender].has_committed_turn = arc4.Bool(
+    bytec_3 // "c_"
+    txn Sender
+    concat
+    dup
+    box_get
+    assert // check self.box_game_character entry exists
+    // smart_contracts/salvo/contract.py:283-285
+    // self.box_game_character[Txn.sender].has_committed_turn = arc4.Bool(
+    //     True  # noqa: FBT003
+    // )
+    intc_1 // 0
+    intc_0 // 1
+    setbit
+    box_put
+    retsub
+
+commit_turn_after_if_else@7:
+    // smart_contracts/salvo/subroutines.py:257-258
+    // # Iterate through the lobby byte array length in 32-byte chunks (one address per chunk)
+    // for i in urange(0, game_lobby_length, cst.ADDRESS_SIZE):
+    frame_dig 5
+    pushint 32 // 32
+    +
+    frame_bury 5
+    b commit_turn_for_header@2
+
+
+// smart_contracts.salvo.contract.Salvo.mimc_tester(position: bytes, movement: bytes, direction: bytes, action: bytes, salt: bytes) -> uint64:
 mimc_tester:
-    // smart_contracts/salvo/contract.py:254-262
+    // smart_contracts/salvo/contract.py:287-296
     // @arc4.abimethod
     // def mimc_tester(
     //     self,
+    //     # game_id: arc4.UInt64, <- Consider as mimc input
     //     position: ta.CoordsPair,
     //     movement: ta.CoordsArray,
-    //     action: arc4.UInt8,
     //     direction: arc4.UInt8,
-    //     salt: UInt64,
-    // ) -> Bytes:
+    //     action: arc4.UInt8,
+    //     salt: arc4.UInt64,
+    // ) -> bool:
     proto 5 1
     intc_1 // 0
-    dupn 9
+    dupn 7
     pushbytes ""
     dupn 5
 
-mimc_tester_while_top@6:
+mimc_tester_while_top@2:
     pushint 10510 // 10510
     global OpcodeBudget
     >
-    bz mimc_tester_after_while@11
+    bz mimc_tester_after_while@7
     itxn_begin
     pushint 6 // appl
     itxn_field TypeEnum
@@ -1308,88 +1439,88 @@ mimc_tester_while_top@6:
     intc_1 // 0
     itxn_field Fee
     itxn_submit
-    b mimc_tester_while_top@6
+    b mimc_tester_while_top@2
 
-mimc_tester_after_while@11:
-    // smart_contracts/salvo/contract.py:266-267
+mimc_tester_after_while@7:
+    // smart_contracts/salvo/contract.py:300-301
     // # Extract row and column values from the given position argument
     // row, col = position.native
     frame_dig -5
     extract 0 1 // on error: Index access is out of bounds
     frame_dig -5
     extract 1 1 // on error: Index access is out of bounds
-    // smart_contracts/salvo/contract.py:269-270
+    // smart_contracts/salvo/contract.py:306-307
     // # Fail transaction unless the assertion below evaluates True
     // srt.assert_coords_in_range(row, col)
     dup2
     callsub assert_coords_in_range
-    // smart_contracts/salvo/contract.py:272
+    // smart_contracts/salvo/contract.py:309
     // srt.convert_grid_coords_to_index(row, col)
     callsub convert_grid_coords_to_index
-    // smart_contracts/salvo/contract.py:273
+    // smart_contracts/salvo/contract.py:310
     // == self.box_game_character[Txn.sender].position
-    bytec_3 // "c_"
-    txn Sender
-    concat
-    box_get
-    assert // check self.box_game_character entry exists
-    extract 1 1 // on error: Index access is out of bounds
-    // smart_contracts/salvo/contract.py:272-273
-    // srt.convert_grid_coords_to_index(row, col)
-    // == self.box_game_character[Txn.sender].position
-    b==
-    // smart_contracts/salvo/contract.py:271-274
-    // assert (
-    //     srt.convert_grid_coords_to_index(row, col)
-    //     == self.box_game_character[Txn.sender].position
-    // ), err.POSITION_MISMATCH
-    assert // Position mismatch. Position value must be equal to expected corresponding state value.
-    // smart_contracts/salvo/contract.py:277
-    // movement.length <= self.box_game_character[Txn.sender].move_points
     bytec_3 // "c_"
     txn Sender
     concat
     box_get
     assert // check self.box_game_character entry exists
     extract 2 1 // on error: Index access is out of bounds
+    // smart_contracts/salvo/contract.py:309-310
+    // srt.convert_grid_coords_to_index(row, col)
+    // == self.box_game_character[Txn.sender].position
+    b==
+    // smart_contracts/salvo/contract.py:308-311
+    // assert (
+    //     srt.convert_grid_coords_to_index(row, col)
+    //     == self.box_game_character[Txn.sender].position
+    // ), err.POSITION_MISMATCH
+    assert // Position mismatch. Position value must be equal to expected corresponding state value.
+    // smart_contracts/salvo/contract.py:314
+    // movement.length <= self.box_game_character[Txn.sender].move_points
+    bytec_3 // "c_"
+    txn Sender
+    concat
+    box_get
+    assert // check self.box_game_character entry exists
+    extract 3 1 // on error: Index access is out of bounds
     frame_dig -4
     intc_1 // 0
     extract_uint16
     dup
-    frame_bury 13
+    frame_bury 11
     itob
     b>=
-    // smart_contracts/salvo/contract.py:276-278
+    // smart_contracts/salvo/contract.py:313-315
     // assert (
     //     movement.length <= self.box_game_character[Txn.sender].move_points
     // ), err.MOVEMENT_OVERFLOW
     assert // Movement overflow. Ensure movement length (num of indicies) is within valid range.
-    // smart_contracts/salvo/contract.py:280
+    // smart_contracts/salvo/contract.py:317
     // assert action <= 1, err.ACTION_OVERFLOW
-    frame_dig -3
-    bytec 6 // 0x01
+    frame_dig -2
+    bytec 8 // 0x01
     b<=
     assert // Action overflow. Ensure action index is within valid range.
-    // smart_contracts/salvo/contract.py:281
+    // smart_contracts/salvo/contract.py:318
     // assert direction <= 3, err.DIRECTION_OVERFLOW
-    frame_dig -2
+    frame_dig -3
     pushbytes 0x03
     b<=
     assert // Direction overflow. Ensure direction index is within valid range.
     intc_1 // 0
-    frame_bury 11
+    frame_bury 9
 
-mimc_tester_for_header@14:
+mimc_tester_for_header@10:
     // smart_contracts/salvo/subroutines.py:54-55
     // # Iterate through the coords in the movement sequence
     // for coords in movement:
+    frame_dig 9
     frame_dig 11
-    frame_dig 13
     <
-    bz mimc_tester_after_for@36
+    bz mimc_tester_after_for@32
     frame_dig -4
     extract 2 0
-    frame_dig 11
+    frame_dig 9
     intc_2 // 2
     *
     intc_2 // 2
@@ -1411,16 +1542,16 @@ mimc_tester_for_header@14:
     // neighbors = ta.Neighbors(
     //     placeholder_coords, placeholder_coords, placeholder_coords, placeholder_coords
     // )
-    bytec 10 // 0x0000000000000000
+    bytec 10 // 0xffffffffffffffff
     dup
     frame_bury 4
     // smart_contracts/salvo/subroutines.py:107-108
     // # Extract current position coordinates (row, col) and initialize valid neighbor counter
-    // row, col = coords.native
+    // row, col = position.native
     frame_dig -5
     extract 0 1 // on error: Index access is out of bounds
     dup
-    frame_bury 7
+    frame_bury 6
     frame_dig -5
     extract 1 1 // on error: Index access is out of bounds
     frame_bury 0
@@ -1443,13 +1574,13 @@ mimc_tester_for_header@14:
     // and is_path_cell(  # 'is_path_cell' checks if North neighbor is a valid path cell
     //     game_id, box_game_grid, arc4.UInt8(row.native - 1), col
     // )
-    bz mimc_tester_after_if_else@18
+    bz mimc_tester_after_if_else@14
     // smart_contracts/salvo/subroutines.py:115
     // game_id, box_game_grid, arc4.UInt8(row.native - 1), col
     frame_dig -5
     // smart_contracts/salvo/subroutines.py:107-108
     // # Extract current position coordinates (row, col) and initialize valid neighbor counter
-    // row, col = coords.native
+    // row, col = position.native
     intc_1 // 0
     // smart_contracts/salvo/subroutines.py:115
     // game_id, box_game_grid, arc4.UInt8(row.native - 1), col
@@ -1464,12 +1595,12 @@ mimc_tester_for_header@14:
     assert // overflow
     extract 7 1
     dup
-    frame_bury 8
+    frame_bury 7
     // smart_contracts/salvo/subroutines.py:90
     // convert_grid_coords_to_index(row, col),
     frame_dig 0
     callsub convert_grid_coords_to_index
-    // smart_contracts/salvo/contract.py:284
+    // smart_contracts/salvo/contract.py:321
     // UInt64(1), self.box_game_grid, position, movement.copy()
     intc_0 // 1
     bytec_2 // "g_"
@@ -1500,18 +1631,18 @@ mimc_tester_for_header@14:
     // and is_path_cell(  # 'is_path_cell' checks if North neighbor is a valid path cell
     //     game_id, box_game_grid, arc4.UInt8(row.native - 1), col
     // )
-    bz mimc_tester_after_if_else@18
+    bz mimc_tester_after_if_else@14
     // smart_contracts/salvo/subroutines.py:118-119
     // # Overwrite placeholder coords w/ valid North neighbor coords (row-1, col) at current count index
     // neighbors[count.native] = ta.CoordsPair((arc4.UInt8(row.native - 1), col))
-    frame_dig 8
+    frame_dig 7
     frame_dig 0
     concat
     // smart_contracts/salvo/subroutines.py:103-105
     // neighbors = ta.Neighbors(
     //     placeholder_coords, placeholder_coords, placeholder_coords, placeholder_coords
     // )
-    bytec 10 // 0x0000000000000000
+    bytec 10 // 0xffffffffffffffff
     // smart_contracts/salvo/subroutines.py:118-119
     // # Overwrite placeholder coords w/ valid North neighbor coords (row-1, col) at current count index
     // neighbors[count.native] = ta.CoordsPair((arc4.UInt8(row.native - 1), col))
@@ -1519,11 +1650,11 @@ mimc_tester_for_header@14:
     replace2 0
     // smart_contracts/salvo/subroutines.py:120
     // count = arc4.UInt8(count.native + 1)  # Increment count by 1
-    bytec 6 // 0x01
+    bytec 8 // 0x01
     frame_bury 3
     frame_bury 5
 
-mimc_tester_after_if_else@18:
+mimc_tester_after_if_else@14:
     frame_dig 3
     dup
     frame_bury 2
@@ -1536,7 +1667,7 @@ mimc_tester_after_if_else@18:
     frame_dig -5
     // smart_contracts/salvo/subroutines.py:107-108
     // # Extract current position coordinates (row, col) and initialize valid neighbor counter
-    // row, col = coords.native
+    // row, col = position.native
     intc_1 // 0
     // smart_contracts/salvo/subroutines.py:124
     // row.native + 1 < cst.GRID_SIZE
@@ -1544,7 +1675,7 @@ mimc_tester_after_if_else@18:
     intc_0 // 1
     +
     dup
-    frame_bury 15
+    frame_bury 13
     pushint 11 // 11
     <
     swap
@@ -1556,10 +1687,10 @@ mimc_tester_after_if_else@18:
     // and is_path_cell(  # 'is_path_cell' checks if South neighbor is a valid path cell
     //     game_id, box_game_grid, arc4.UInt8(row.native + 1), col
     // )
-    bz mimc_tester_after_if_else@21
+    bz mimc_tester_after_if_else@17
     // smart_contracts/salvo/subroutines.py:126
     // game_id, box_game_grid, arc4.UInt8(row.native + 1), col
-    frame_dig 15
+    frame_dig 13
     itob
     dup
     bitlen
@@ -1568,12 +1699,12 @@ mimc_tester_after_if_else@18:
     assert // overflow
     extract 7 1
     dup
-    frame_bury 8
+    frame_bury 7
     // smart_contracts/salvo/subroutines.py:90
     // convert_grid_coords_to_index(row, col),
     frame_dig 0
     callsub convert_grid_coords_to_index
-    // smart_contracts/salvo/contract.py:284
+    // smart_contracts/salvo/contract.py:321
     // UInt64(1), self.box_game_grid, position, movement.copy()
     intc_0 // 1
     bytec_2 // "g_"
@@ -1604,11 +1735,11 @@ mimc_tester_after_if_else@18:
     // and is_path_cell(  # 'is_path_cell' checks if South neighbor is a valid path cell
     //     game_id, box_game_grid, arc4.UInt8(row.native + 1), col
     // )
-    bz mimc_tester_after_if_else@21
+    bz mimc_tester_after_if_else@17
     // smart_contracts/salvo/subroutines.py:129-130
     // # Overwrite placeholder coords w/ valid South neighbor coords (row+1, col) at current count index
     // neighbors[count.native] = ta.CoordsPair((arc4.UInt8(row.native + 1), col))
-    frame_dig 8
+    frame_dig 7
     frame_dig 0
     concat
     frame_dig 2
@@ -1639,7 +1770,7 @@ mimc_tester_after_if_else@18:
     frame_bury 3
     frame_bury 5
 
-mimc_tester_after_if_else@21:
+mimc_tester_after_if_else@17:
     frame_dig 3
     dup
     frame_bury 2
@@ -1661,13 +1792,13 @@ mimc_tester_after_if_else@21:
     // and is_path_cell(  # 'is_path_cell' checks if West neighbor is a valid path cell
     //     game_id, box_game_grid, row, arc4.UInt8(col.native - 1)
     // )
-    bz mimc_tester_after_if_else@24
+    bz mimc_tester_after_if_else@20
     // smart_contracts/salvo/subroutines.py:137
     // game_id, box_game_grid, row, arc4.UInt8(col.native - 1)
     frame_dig -5
     // smart_contracts/salvo/subroutines.py:107-108
     // # Extract current position coordinates (row, col) and initialize valid neighbor counter
-    // row, col = coords.native
+    // row, col = position.native
     intc_0 // 1
     // smart_contracts/salvo/subroutines.py:137
     // game_id, box_game_grid, row, arc4.UInt8(col.native - 1)
@@ -1685,10 +1816,10 @@ mimc_tester_after_if_else@21:
     frame_bury 0
     // smart_contracts/salvo/subroutines.py:90
     // convert_grid_coords_to_index(row, col),
-    frame_dig 7
+    frame_dig 6
     swap
     callsub convert_grid_coords_to_index
-    // smart_contracts/salvo/contract.py:284
+    // smart_contracts/salvo/contract.py:321
     // UInt64(1), self.box_game_grid, position, movement.copy()
     intc_0 // 1
     bytec_2 // "g_"
@@ -1719,11 +1850,11 @@ mimc_tester_after_if_else@21:
     // and is_path_cell(  # 'is_path_cell' checks if West neighbor is a valid path cell
     //     game_id, box_game_grid, row, arc4.UInt8(col.native - 1)
     // )
-    bz mimc_tester_after_if_else@24
+    bz mimc_tester_after_if_else@20
     // smart_contracts/salvo/subroutines.py:140-141
     // # Overwrite placeholder coords w/ valid West neighbor coords (row, col-1) at current count index
     // neighbors[count.native] = ta.CoordsPair((row, arc4.UInt8(col.native - 1)))
-    frame_dig 7
+    frame_dig 6
     frame_dig 0
     concat
     frame_dig 2
@@ -1754,7 +1885,7 @@ mimc_tester_after_if_else@21:
     frame_bury 3
     frame_bury 5
 
-mimc_tester_after_if_else@24:
+mimc_tester_after_if_else@20:
     frame_dig 3
     dup
     frame_bury 2
@@ -1767,7 +1898,7 @@ mimc_tester_after_if_else@24:
     frame_dig -5
     // smart_contracts/salvo/subroutines.py:107-108
     // # Extract current position coordinates (row, col) and initialize valid neighbor counter
-    // row, col = coords.native
+    // row, col = position.native
     intc_0 // 1
     // smart_contracts/salvo/subroutines.py:146
     // col.native + 1 < cst.GRID_SIZE
@@ -1775,7 +1906,7 @@ mimc_tester_after_if_else@24:
     intc_0 // 1
     +
     dup
-    frame_bury 14
+    frame_bury 12
     pushint 11 // 11
     <
     swap
@@ -1787,10 +1918,10 @@ mimc_tester_after_if_else@24:
     // and is_path_cell(  # 'is_path_cell' checks if East neighbor is a valid path cell
     //     game_id, box_game_grid, row, arc4.UInt8(col.native + 1)
     // )
-    bz mimc_tester_after_if_else@27
+    bz mimc_tester_after_if_else@23
     // smart_contracts/salvo/subroutines.py:148
     // game_id, box_game_grid, row, arc4.UInt8(col.native + 1)
-    frame_dig 14
+    frame_dig 12
     itob
     dup
     bitlen
@@ -1802,10 +1933,10 @@ mimc_tester_after_if_else@24:
     frame_bury 0
     // smart_contracts/salvo/subroutines.py:90
     // convert_grid_coords_to_index(row, col),
-    frame_dig 7
+    frame_dig 6
     swap
     callsub convert_grid_coords_to_index
-    // smart_contracts/salvo/contract.py:284
+    // smart_contracts/salvo/contract.py:321
     // UInt64(1), self.box_game_grid, position, movement.copy()
     intc_0 // 1
     bytec_2 // "g_"
@@ -1836,11 +1967,11 @@ mimc_tester_after_if_else@24:
     // and is_path_cell(  # 'is_path_cell' checks if East neighbor is a valid path cell
     //     game_id, box_game_grid, row, arc4.UInt8(col.native + 1)
     // )
-    bz mimc_tester_after_if_else@27
+    bz mimc_tester_after_if_else@23
     // smart_contracts/salvo/subroutines.py:151-152
     // # Overwrite placeholder coords w/ valid East neighbor coords (row, col+1) at current count index
     // neighbors[count.native] = ta.CoordsPair((row, arc4.UInt8(col.native + 1)))
-    frame_dig 7
+    frame_dig 6
     frame_dig 0
     concat
     frame_dig 2
@@ -1871,7 +2002,7 @@ mimc_tester_after_if_else@24:
     frame_bury 3
     frame_bury 5
 
-mimc_tester_after_if_else@27:
+mimc_tester_after_if_else@23:
     frame_dig 3
     frame_dig 5
     frame_bury 4
@@ -1879,22 +2010,22 @@ mimc_tester_after_if_else@27:
     // # Iterate through the count value of the `neighbors_with_count` tuple
     // for i in urange(neighbors_with_count[1].native):
     btoi
-    frame_bury 12
-    intc_1 // 0
     frame_bury 10
+    intc_1 // 0
+    frame_bury 8
 
-mimc_tester_for_header@28:
+mimc_tester_for_header@24:
     // smart_contracts/salvo/subroutines.py:38-39
     // # Iterate through the count value of the `neighbors_with_count` tuple
     // for i in urange(neighbors_with_count[1].native):
+    frame_dig 8
     frame_dig 10
-    frame_dig 12
     <
-    bz mimc_tester_after_for@32
+    bz mimc_tester_after_for@28
     // smart_contracts/salvo/subroutines.py:40-41
     // # Check if the coords argument is equal to the neighbors entry at given index
     // if coords == neighbors_with_count[0][i]:
-    frame_dig 10
+    frame_dig 8
     intc_2 // 2
     *
     frame_dig 4
@@ -1903,182 +2034,91 @@ mimc_tester_for_header@28:
     extract3 // on error: Index access is out of bounds
     frame_dig 1
     ==
-    bz mimc_tester_after_if_else@31
+    bz mimc_tester_after_if_else@27
     // smart_contracts/salvo/subroutines.py:42
     // return True  # Move is valid
     intc_0 // 1
 
-mimc_tester_after_inlined_smart_contracts.salvo.subroutines.is_single_move_valid@33:
+mimc_tester_after_inlined_smart_contracts.salvo.subroutines.is_single_move_valid@29:
     // smart_contracts/salvo/subroutines.py:69-70
     // # Check if coords entry from movement sequence is not a valid move
     // if not is_single_move_valid(neighbors_with_count, coords):
-    bnz mimc_tester_after_if_else@35
+    bnz mimc_tester_after_if_else@31
     // smart_contracts/salvo/subroutines.py:71
     // return False
     intc_1 // 0
 
-mimc_tester_after_inlined_smart_contracts.salvo.subroutines.is_move_sequence_valid@37:
-    // smart_contracts/salvo/contract.py:283-285
+mimc_tester_after_inlined_smart_contracts.salvo.subroutines.is_move_sequence_valid@33:
+    // smart_contracts/salvo/contract.py:320-322
     // assert srt.is_move_sequence_valid(
     //     UInt64(1), self.box_game_grid, position, movement.copy()
     // ), err.INVALID_MOVE_SEQUENCE
     assert // Invalid move sequence. Ensure coordinate entries within the movement array are valid path cells.
-    // smart_contracts/salvo/subroutines.py:169-170
-    // # Return big-endian byte array (AVM type: Bytes), UInt64 left-padded w/ zeros to match 32-byte scalar format
-    // return op.bzero(24) + u.bytes
-    pushint 24 // 24
-    bzero
-    frame_bury 9
-    pushbytes 0x00000000000000000000000000000000000000000000000000000053616c766f
-    frame_bury 6
-    intc_1 // 0
-    frame_bury 11
-
-mimc_tester_for_header@1:
-    // smart_contracts/salvo/contract.py:291-292
-    // # Iterate through all the entries in the movement coords array
-    // for new_coords in movement:
-    frame_dig 11
-    frame_dig 13
-    <
-    bz mimc_tester_after_for@4
-    frame_dig -4
-    extract 2 0
-    frame_dig 11
-    dup
-    cover 2
-    intc_2 // 2
-    *
-    intc_2 // 2
-    extract3 // on error: Index access is out of bounds
-    // smart_contracts/salvo/contract.py:293-294
-    // # Extract new row and new column values from the given movement argument
-    // new_row, new_col = new_coords.native
-    dup
-    extract 0 1 // on error: Index access is out of bounds
-    swap
-    extract 1 1 // on error: Index access is out of bounds
-    // smart_contracts/salvo/subroutines.py:162-163
-    // # Return big-endian byte array (AVM type: Bytes), UInt8 left-padded w/ zeros to match 32-byte scalar format
-    // return op.bzero(31) + u.bytes
-    pushint 31 // 31
-    bzero
-    dup
-    uncover 3
-    concat
-    // smart_contracts/salvo/contract.py:295-296
-    // # Append the validated move to preimage
-    // preimage += srt.u8_to_fr32(new_row)
-    frame_dig 6
-    swap
-    concat
-    // smart_contracts/salvo/subroutines.py:162-163
-    // # Return big-endian byte array (AVM type: Bytes), UInt8 left-padded w/ zeros to match 32-byte scalar format
-    // return op.bzero(31) + u.bytes
-    swap
-    uncover 2
-    concat
-    // smart_contracts/salvo/contract.py:297
-    // preimage += srt.u8_to_fr32(new_col)
-    concat
-    frame_bury 6
-    intc_0 // 1
-    +
-    frame_bury 11
-    b mimc_tester_for_header@1
-
-mimc_tester_after_for@4:
-    // smart_contracts/salvo/subroutines.py:162-163
-    // # Return big-endian byte array (AVM type: Bytes), UInt8 left-padded w/ zeros to match 32-byte scalar format
-    // return op.bzero(31) + u.bytes
-    pushint 31 // 31
-    bzero
-    dup
-    frame_dig -3
-    concat
-    // smart_contracts/salvo/contract.py:299-300
-    // # Add rest of the scalar inputs
-    // preimage += srt.u8_to_fr32(action)
-    frame_dig 6
-    swap
-    concat
-    // smart_contracts/salvo/subroutines.py:162-163
-    // # Return big-endian byte array (AVM type: Bytes), UInt8 left-padded w/ zeros to match 32-byte scalar format
-    // return op.bzero(31) + u.bytes
-    swap
-    frame_dig -2
-    concat
-    // smart_contracts/salvo/contract.py:301
-    // preimage += srt.u8_to_fr32(direction)
-    concat
-    // smart_contracts/salvo/contract.py:302
-    // preimage += srt.u64_to_fr32(arc4.UInt64(salt))
-    frame_dig -1
-    itob
-    // smart_contracts/salvo/subroutines.py:169-170
-    // # Return big-endian byte array (AVM type: Bytes), UInt64 left-padded w/ zeros to match 32-byte scalar format
-    // return op.bzero(24) + u.bytes
-    frame_dig 9
-    swap
-    concat
-    // smart_contracts/salvo/contract.py:302
-    // preimage += srt.u64_to_fr32(arc4.UInt64(salt))
-    concat
-    // smart_contracts/salvo/contract.py:313
+    // smart_contracts/salvo/contract.py:345
+    // preimage += srt.u64_to_fr32(arc4.UInt64(22244674235551615))
+    pushbytes 0x000000000000000000000000000000000000000000000000000000000000000300000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000004f0769d1f44f7f
+    // smart_contracts/salvo/contract.py:359
     // output = op.mimc(op.MiMCConfigurations.BLS12_381Mp111, preimage)
     mimc BLS12_381Mp111
-    // smart_contracts/salvo/contract.py:319
-    // return output
+    // smart_contracts/salvo/contract.py:354-357
+    // # valid_path_cells = srt.get_valid_path_cells(neighbors_with_count)
+    // test = arc4.UInt256(
+    //     47153278636951250277202262925224176210829230980727422161852484596143340668883
+    // )
+    pushbytes 0x683fcf5773dbde34476541100fd308316f712d8780f9d4dd82b1513150c847d3
+    // smart_contracts/salvo/contract.py:365
+    // return test.bytes == output
+    ==
     frame_bury 0
     retsub
 
-mimc_tester_after_if_else@35:
-    frame_dig 11
+mimc_tester_after_if_else@31:
+    frame_dig 9
     intc_0 // 1
     +
-    frame_bury 11
+    frame_bury 9
     frame_dig 1
     frame_bury -5
-    b mimc_tester_for_header@14
+    b mimc_tester_for_header@10
 
-mimc_tester_after_if_else@31:
+mimc_tester_after_if_else@27:
     // smart_contracts/salvo/subroutines.py:38-39
     // # Iterate through the count value of the `neighbors_with_count` tuple
     // for i in urange(neighbors_with_count[1].native):
-    frame_dig 10
+    frame_dig 8
     intc_0 // 1
     +
-    frame_bury 10
-    b mimc_tester_for_header@28
+    frame_bury 8
+    b mimc_tester_for_header@24
 
-mimc_tester_after_for@32:
+mimc_tester_after_for@28:
     // smart_contracts/salvo/subroutines.py:43
     // return False  # Move is invalid
     intc_1 // 0
     // smart_contracts/salvo/subroutines.py:69-70
     // # Check if coords entry from movement sequence is not a valid move
     // if not is_single_move_valid(neighbors_with_count, coords):
-    b mimc_tester_after_inlined_smart_contracts.salvo.subroutines.is_single_move_valid@33
+    b mimc_tester_after_inlined_smart_contracts.salvo.subroutines.is_single_move_valid@29
 
-mimc_tester_after_for@36:
+mimc_tester_after_for@32:
     // smart_contracts/salvo/subroutines.py:76-77
     // # If all entry coords in movement in range of count are valid, return True
     // return True
     intc_0 // 1
-    // smart_contracts/salvo/contract.py:283-285
+    // smart_contracts/salvo/contract.py:320-322
     // assert srt.is_move_sequence_valid(
     //     UInt64(1), self.box_game_grid, position, movement.copy()
     // ), err.INVALID_MOVE_SEQUENCE
-    b mimc_tester_after_inlined_smart_contracts.salvo.subroutines.is_move_sequence_valid@37
+    b mimc_tester_after_inlined_smart_contracts.salvo.subroutines.is_move_sequence_valid@33
 
 
 // smart_contracts.salvo.contract.Salvo.update() -> void:
 update:
-    // smart_contracts/salvo/contract.py:323
+    // smart_contracts/salvo/contract.py:369
     // assert TemplateVar[bool]("UPDATABLE"), err.UPDATABLE_NOT_TRUE
-    intc 6 // TMPL_UPDATABLE
+    intc 5 // TMPL_UPDATABLE
     assert // Template variable 'UPDATABLE' needs to be 'True' at deploy-time.
-    // smart_contracts/salvo/contract.py:324
+    // smart_contracts/salvo/contract.py:370
     // assert Txn.sender == Global.creator_address, err.SENDER_NOT_CREATOR
     txn Sender
     global CreatorAddress

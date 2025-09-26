@@ -1,5 +1,5 @@
 # smart_contracts/salvo/structs.py
-from algopy import BoxMap, Bytes, UInt64, arc4, op, subroutine, urange
+from algopy import Account, BoxMap, BoxRef, Bytes, UInt64, arc4, op, subroutine, urange
 
 from . import constants as cst
 from . import errors as err
@@ -237,3 +237,41 @@ def set_grid_cell_value_at_coords(
     set_grid_cell_value_at_index(
         game_id, box_game_grid, convert_grid_coords_to_index(row, col), value
     )
+
+
+# Check if account is an active player of a game
+@subroutine
+def check_acc_in_game(
+    game_id: UInt64,
+    account: Account,
+    box_game_lobby: BoxMap[UInt64, Bytes],
+    player_count: UInt64,
+    clear_player: bool,  # noqa: FBT001
+) -> bool:
+    # Calculate total byte length to iterate over based on player count and address size
+    game_lobby_length = player_count * cst.ADDRESS_SIZE
+
+    # Initialize flag to track if account is found in game
+    acc_in_game = False
+
+    # Iterate through the lobby byte array length in 32-byte chunks (one address per chunk)
+    for i in urange(0, game_lobby_length, cst.ADDRESS_SIZE):
+        # Extract the 32-byte player address at start index i
+        player_addr_bytes = op.extract(box_game_lobby[game_id], i, cst.ADDRESS_SIZE)
+
+        # Check if the extracted player address bytes match up with the account bytes
+        if account.bytes == player_addr_bytes:
+            acc_in_game = True
+
+            # Optionally, clear this player from the box by replacing their address with zero bytes
+            if clear_player:
+                game_lobby_bref = BoxRef(
+                    key=box_game_lobby.key_prefix + op.itob(game_id)
+                )
+                game_lobby_bref.replace(i, cst.ZEROED_ADDR_BYTES)
+
+            # Exit loop early since sender was found
+            break
+
+    # Return True if account was found in the game, else False
+    return acc_in_game
