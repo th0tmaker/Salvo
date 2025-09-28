@@ -1,6 +1,9 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
+  readonly VITE_ZKEY_PATH: string
+  readonly VITE_VKEY_POINTS_OUT_DIR: string
+
   readonly VITE_ENVIRONMENT: string
 
   readonly VITE_ALGOD_TOKEN: string

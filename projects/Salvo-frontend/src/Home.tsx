@@ -1,9 +1,11 @@
 // src/components/Home.tsx
+import { consoleLogger } from '@algorandfoundation/algokit-utils/types/logging'
 import { useWallet } from '@txnlab/use-wallet-react'
 import React, { useState } from 'react'
 import AppCalls from './components/AppCalls'
 import ConnectWallet from './components/ConnectWallet'
 import Transact from './components/Transact'
+import { exportVKeyPoints } from './scripts/handleVKeyPoints'
 
 interface HomeProps {}
 
@@ -12,6 +14,17 @@ const Home: React.FC<HomeProps> = () => {
   const [openDemoModal, setOpenDemoModal] = useState<boolean>(false)
   const [appCallsDemoModal, setAppCallsDemoModal] = useState<boolean>(false)
   const { activeAddress } = useWallet()
+
+  const getVKeyPoints = async () => {
+    try {
+      const zKeyPath = import.meta.env?.VITE_ZKEY_PATH || '/turn_validator.zkey'
+      const result = await exportVKeyPoints(zKeyPath, true)
+      consoleLogger.info('✅ Verification key points serialized successfully!')
+      consoleLogger.info(`Verification key curve points data: ${result}`)
+    } catch (err) {
+      consoleLogger.error('❌ Failed to process VKey curve points serialization:', err)
+    }
+  }
 
   const toggleWalletModal = () => {
     setOpenWalletModal(!openWalletModal)
@@ -47,7 +60,7 @@ const Home: React.FC<HomeProps> = () => {
             </a>
 
             <div className="divider" />
-            <button data-test-id="connect-wallet" className="btn m-2" onClick={toggleWalletModal}>
+            <button data-test-id="connect-wallet" className="btn m-2" onClick={getVKeyPoints}>
               Wallet Connection
             </button>
 

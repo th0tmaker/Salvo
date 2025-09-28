@@ -1,3 +1,4 @@
+import { AlgorandClient } from '@algorandfoundation/algokit-utils'
 import { AlgoViteClientConfig, AlgoViteKMDConfig } from '../../interfaces/network'
 
 export function getAlgodConfigFromViteEnvironment(): AlgoViteClientConfig {
@@ -38,4 +39,22 @@ export function getKmdConfigFromViteEnvironment(): AlgoViteKMDConfig {
     wallet: import.meta.env.VITE_KMD_WALLET,
     password: import.meta.env.VITE_KMD_PASSWORD,
   }
+}
+
+// Uncomment for LocalNet testing
+// export function getAlgorandClient(): AlgorandClient {
+//   const algodConfig = getAlgodConfigFromViteEnvironment()
+//   const indexerConfig = getIndexerConfigFromViteEnvironment()
+//   const kmdConfig = getKmdConfigFromViteEnvironment()
+
+//   return AlgorandClient.fromConfig({ algodConfig, indexerConfig, kmdConfig })
+
+// }
+
+export function getAlgorandClient(): AlgorandClient {
+  const algorand = AlgorandClient.testNet() // Pick defualtLocalNet() for localnet testing
+    // signer: TransactionSigner
+    // .setDefaultSigner(signer) // Replace `signer` with your signer instance
+    .setDefaultValidityWindow(1000) // Set validity window to 1000 rounds
+  return algorand
 }

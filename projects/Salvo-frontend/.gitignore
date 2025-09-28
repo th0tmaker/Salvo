@@ -11,12 +11,12 @@
 # production
 /build
 
-
 # dotenv environment variable files
 .env
 env/
 
 # misc
+/public/turn_validator.zkey
 /dist
 .DS_Store
 

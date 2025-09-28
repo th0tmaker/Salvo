@@ -1,11 +1,11 @@
 # tests/salvo_localnet_test.py
 import logging
 from datetime import datetime
+from typing import NamedTuple
 
 import pytest
 from algokit_utils import (
     AppClientCompilationParams,
-    CommonAppCallParams,
     FundAppAccountParams,
     OnSchemaBreak,
     OnUpdate,
@@ -15,16 +15,19 @@ from algokit_utils import (
 )
 from algokit_utils.algorand import AlgorandClient
 from algokit_utils.models import SigningAccount
-from algosdk.encoding import decode_address
 from algosdk.transaction import wait_for_confirmation
 
+from smart_contracts.artifacts.plonk_verifier.lagrange_witness_calculator_client import (
+    CalculateLagrangeWitnessArgs,
+    LagrangeWitnessCalculatorFactory,
+    LagrangeWitnessCalculatorMethodCallCreateParams,
+)
 from smart_contracts.artifacts.salvo.salvo_client import (
     SalvoClient,
     SalvoFactory,
     SalvoMethodCallCreateParams,
 )
-from smart_contracts.salvo import constants as cst
-from tests.utils import create_payment_txn, send_app_call_txn
+from tests.salvo_snarkjs import encode_vkey, get_root_of_unity
 
 # from .subscriber import (
 #     AlgorandSubscriber,
@@ -33,6 +36,17 @@ from tests.utils import create_payment_txn, send_app_call_txn
 
 # Setup the logging.Logger
 logger = logging.getLogger(__name__)
+
+
+class AppFactories(NamedTuple):
+    salvo_factories: dict[str, SalvoFactory]
+    lwc_factories: dict[str, LagrangeWitnessCalculatorFactory]
+
+
+class AppClients(NamedTuple):
+    salvo_clients: dict[str, SalvoClient]
+    # lwc_clients: dict[str, LagrangeWitnessCalculatorClient]
+
 
 # Return an instance of the AlgorandSubscriber object to listen for network events
 # @pytest.fixture(scope="session")
@@ -78,27 +92,52 @@ def creator(algorand: AlgorandClient, dispenser: SigningAccount) -> SigningAccou
     return creator
 
 
-# Return a typed smart contract factory with default sender and signer
+# Get the typed app factory of a given smart contract from the Algorand client
 @pytest.fixture(scope="session")
-def app_factory(
+def app_factories(
     algorand: AlgorandClient,
     creator: SigningAccount,
-) -> SalvoFactory:
+) -> AppFactories:
+
     # Define the on-deployment/compilation parameters
-    template_params: TealTemplateParams = {
+    salvo_template_params: TealTemplateParams = {
         "GEN_UNIX": int(datetime.now().timestamp()),
     }
 
-    # Return typed app factory object
-    return algorand.client.get_typed_app_factory(
-        SalvoFactory,
-        default_sender=creator.address,
-        default_signer=creator.signer,
-        compilation_params=AppClientCompilationParams(
-            deploy_time_params=template_params,
-            updatable=True,
-            deletable=None,  # deletable=True,
-        ),
+    lwc_template_params: TealTemplateParams = {
+        "VERIFICATION_KEY": encode_vkey(logger),
+        "ROOT_OF_UNITY": get_root_of_unity(logger),
+    }
+
+    salvo_factories = {
+        "salvo_factory_1": algorand.client.get_typed_app_factory(
+            SalvoFactory,
+            default_sender=creator.address,
+            default_signer=creator.signer,
+            compilation_params=AppClientCompilationParams(
+                deploy_time_params=salvo_template_params,
+                updatable=True,
+                deletable=None,
+            ),
+        )
+    }
+    lwc_factories = {
+        "lwc_factory_1": algorand.client.get_typed_app_factory(
+            LagrangeWitnessCalculatorFactory,
+            default_sender=creator.address,
+            default_signer=creator.signer,
+            compilation_params=AppClientCompilationParams(
+                deploy_time_params=lwc_template_params,
+                updatable=None,
+                deletable=None,
+            ),
+        )
+    }
+
+    logger.info(lwc_factories["lwc_factory_1"].app_name)
+    return AppFactories(
+        salvo_factories=salvo_factories,
+        lwc_factories=lwc_factories,
     )
 
 
@@ -131,50 +170,91 @@ def randy_factory(algorand: AlgorandClient, dispenser: SigningAccount) -> dict:
 
 # Create smart contract client using factory deploy method
 @pytest.fixture(scope="session")
-def sc_client(app_factory: SalvoFactory) -> SalvoClient:
-    # Provide deployment requirements and extract the smart contract client from the app factory
-    sc_client = app_factory.deploy(
-        on_update=OnUpdate.ReplaceApp,
-        on_schema_break=OnSchemaBreak.ReplaceApp,
-        create_params=SalvoMethodCallCreateParams(
-            method="generate",
-            max_fee=micro_algo(5_000),
-            note=b'salvo:j{"concern":"txn.app_call;generate"}',
-        ),
-        # delete_params=SalvoMethodCallDeleteParams(
-        #     method="terminate",
-        #     max_fee=micro_algo(5_000),
-        #     note=b'salvo:j{"concern":"txn.app_call;terminate"}',
-        # ),
-    )[0]
+def app_clients(app_factories: AppFactories) -> AppClients:
 
-    # Return the smart contract client w/ creator account as default sender and signer
-    return sc_client
+    salvo_clients = {}
+    for name, factory in app_factories.salvo_factories.items():
+        try:
+            sc_client = factory.deploy(
+                on_update=OnUpdate.ReplaceApp,
+                on_schema_break=OnSchemaBreak.ReplaceApp,
+                create_params=SalvoMethodCallCreateParams(
+                    method="generate",
+                    note=b'salvo:j{"concern":"txn.app_call;generate"}',
+                ),
+                # "delete_params": SalvoMethodCallDeleteParams(
+                #     method="terminate",
+                #     max_fee=micro_algo(5_000),
+                #     note=b'salvo:j{"concern":"txn.app_call;terminate"}',
+                # ),
+            )[0]
+
+            client_name = name.replace("_factory_1", "_client_1")
+            salvo_clients[client_name] = sc_client
+
+        except Exception as e:
+            logger.info(f"Failed to deploy {name}: {e}")
+
+    lwc_clients = {}
+    for name, factory in app_factories.lwc_factories.items():
+        try:
+            sc_client = factory.deploy(
+                on_update=OnUpdate.UpdateApp,
+                on_schema_break=OnSchemaBreak.ReplaceApp,
+                create_params=LagrangeWitnessCalculatorMethodCallCreateParams(
+                    method="calculateLagrangeWitness",
+                    args=CalculateLagrangeWitnessArgs(signals=[1], proof="Proof"),
+                    note=b"abc",
+                ),
+            )[0]
+
+            client_name = name.replace("_factory_1", "_client_1")
+            lwc_clients[client_name] = sc_client
+
+        except Exception as e:
+            logger.info(f"Failed to deploy {name}: {e}")
+
+    logger.info(lwc_clients["lwc_client_1"])
+
+    return AppClients(
+        salvo_clients=salvo_clients,
+        # lwc_clients=lwc_clients,
+    )
 
 
-# Create a dict called apps that stores as many smart contract clients as needed
-@pytest.fixture(scope="session")
-def apps(
-    sc_client: SalvoClient,
-) -> dict:
-    # Initialize new dict that stores the creator smart contract as its first element
-    apps = {"salvo_client_1": SalvoClient(app_client=sc_client.app_client)}
+# # Create a dict called apps that stores as many smart contract clients as needed
+# @pytest.fixture(scope="session")
+# def apps(
+#     app_clients: AppClients,
+# ) -> dict:
+#     # Initialize dict to store app clients
+#     apps = {}
 
-    # Log
-    logger.info(
-        f"APP CLIENT 1 ID: {apps['salvo_client_1'].app_id}"
-    )  #  Check client 1 app ID
+#     # Extract Salvo clients
+#     for name, client in app_clients.salvo_clients.items():
+#         apps[name] = client
+#         logger.info(f"APP CLIENT: {name}, APP ID: {client.app_id}")
 
-    # Return apps dict with app clients (output: dict[str, PieoutClient])
-    return apps
+#     # Extract LWC clients
+#     for name, client in app_clients.lwc_clients.items():
+#         apps[name] = client
+#         logger.info(f"APP CLIENT: {name}, APP ID: {client.app_id}")
+
+#     app_clients.salvo_clients["salvo_client_1"].app_client.
+#     logger.info(apps)
+#     return apps
 
 
 # Fund smart contract app account (app creator is account doing the funding, implied by use of their client instance)
-def test_fund_app_mbr(apps: dict[str, SalvoClient]) -> None:
+def test_fund_app_mbr(app_clients: AppClients) -> None:
     # Get smart contract application client from from apps dict
-    app_client = apps["salvo_client_1"].app_client
-    # Send a payment transaction to make the app account operable by funding its base minimum balance requirement
-    fund_app_txn = app_client.fund_app_account(
+    salvo = app_clients.salvo_clients["salvo_client_1"]
+    # lwc = app_clients.lwc_clients["lwc_client_1"]
+
+    logger.info(get_root_of_unity(logger))
+
+    # lwc_app_client.
+    fund_app_txn = salvo.app_client.fund_app_account(
         FundAppAccountParams(
             note=b'salvo:j{"method":"fund_app_account","concern":"txn.pay;fund_base_mbr"}',
             amount=micro_algo(100_000),
@@ -182,256 +262,256 @@ def test_fund_app_mbr(apps: dict[str, SalvoClient]) -> None:
     )
 
     # Verify transaction was confirmed by the network
-    wait_for_confirmation(app_client.algorand.client.algod, fund_app_txn.tx_id, 3)
+    wait_for_confirmation(salvo.algorand.client.algod, fund_app_txn.tx_id, 3)
     assert (
         fund_app_txn.confirmation
     ), "fund_app_txn.confirmation transaction failed confirmation."
 
 
-# Test case for sending an app call transaction to the `get_box_user_registry` method of the smart contract
-def test_get_box_user_registry(
-    creator: SigningAccount,
-    apps: dict[str, SalvoClient],
-) -> None:
-    # Get smart contract application from from apps dict
-    app = apps["salvo_client_1"]
-
-    # Define nested function that attemps to call the `get_box_user_registry` method
-    def try_get_box_user_registry_txn(
-        sender: SigningAccount,
-        note: bytes | str | None = None,
-    ) -> None:
-        # Create the required payment transactions
-        box_r_pay = create_payment_txn(
-            app=app,
-            sender=sender,
-            amount=cst.BOX_R_COST,
-            note=b'salvo:j{"concern":"txn.pay;box_r_mbr_pay"}',
-        )  # Box user registry MBR cost payment
-
-        # Send app call transaction to execute smart contract method `new_game`
-        send_app_call_txn(
-            logger=logger,
-            app=app,
-            sender=sender,
-            method=app.send.get_box_user_registry,
-            args=(box_r_pay,),
-            note=note,
-            description="App Call Method Call Transaction: get_box_user_registry()",
-        )
-
-    # Call `try_get_box_user_registry_txn`
-    try_get_box_user_registry_txn(
-        sender=creator,
-        note=b'salvo:j{"method":"new_game","concern":"txn.app_call;user_registered_their_acc"}',
-    )
-
-    box_r_value = app.state.box.box_user_registry.get_value(
-        decode_address(creator.address)
-    )
-
-    # Log
-    logger.info(box_r_value)
-
-
-# Test case for sending an app call transaction to the `new_game` method of the smart contract
-def test_new_game(
-    creator: SigningAccount,
-    apps: dict[str, SalvoClient],
-) -> None:
-    # Get smart contract application from from apps dict
-    app = apps["salvo_client_1"]
-
-    # Define nested function that attemps to call the `new_game` method
-    def try_new_game_txn(
-        sender: SigningAccount,
-        stake_amount: int,
-        lobby_size: int,
-        note: bytes | str | None = None,
-    ) -> None:
-        # Define payment amounts
-        box_l_cost = app.send.calc_single_box_cost(
-            (10, lobby_size * cst.ADDRESS_SIZE)
-        ).abi_return
-
-        # Create the required payment transactions
-        stake_pay = create_payment_txn(
-            app=app,
-            sender=sender,
-            amount=stake_amount,
-            note=b'salvo:j{"concern":"txn.pay;stake_pay"}',
-        )  # Stake payment
-        box_g_pay = create_payment_txn(
-            app=app,
-            sender=sender,
-            amount=cst.BOX_G_COST,
-            note=b'salvo:j{"concern":"txn.pay;box_g_mbr_pay"}',
-        )  # Box game grid MBR cost payment
-        box_s_pay = create_payment_txn(
-            app=app,
-            sender=sender,
-            amount=cst.BOX_S_COST,
-            note=b'salvo:j{"concern":"txn.pay;box_s_mbr_pay"}',
-        )  # Box game state MBR cost payment
-        box_c_pay = create_payment_txn(
-            app=app,
-            sender=sender,
-            amount=cst.BOX_C_COST,
-            note=b'salvo:j{"concern":"txn.pay;box_c_mbr_pay"}',
-        )  # Box game character MBR cost payment
-        box_l_pay = create_payment_txn(
-            app=app,
-            sender=sender,
-            amount=box_l_cost,  # current cost: 32_100 mAlgo
-            note=b'salvo:j{"concern":"txn.pay;box_l_mbr_pay"}',
-        )  # Box game lobby MBR cost payment
-
-        # Send app call transaction to execute smart contract method `new_game`
-        send_app_call_txn(
-            logger=logger,
-            app=app,
-            sender=sender,
-            method=app.send.new_game,
-            args=(
-                box_g_pay,
-                box_s_pay,
-                box_c_pay,
-                box_l_pay,
-                stake_pay,
-                lobby_size,
-            ),
-            note=note,
-            description="App Call Method Call Transaction: new_game()",
-        )
-
-    # Call `try_new_game_txn`
-    try_new_game_txn(
-        sender=creator,
-        stake_amount=0,
-        # stake_amount=2_000_000,
-        lobby_size=2,
-        note=b'salvo:j{"method":"new_game","concern":"txn.app_call;create_new_game"}',
-    )
-
-    game_id_1_bytes = (1).to_bytes(8, "big")
-    box_g_value = app.state.box.box_game_grid.get_value(game_id_1_bytes)
-    box_s_value = app.state.box.box_game_state.get_value(game_id_1_bytes)
-    box_p_value = app.state.box.box_game_character.get_value(
-        decode_address(creator.address)
-    )
-
-    read_game_1_lobby_txn = app.send.read_box_game_lobby(
-        args=(1,),
-        params=CommonAppCallParams(sender=creator.address, signer=creator.address),
-    )
-
-    # Log
-    logger.info(box_g_value)
-    logger.info(box_s_value)
-    logger.info(box_p_value)
-
-    logger.info(f"Creator address: {creator.address}")
-    logger.info(f"Game lobby: {read_game_1_lobby_txn.abi_return}")
-
-
-# Test case for sending an app call transaction to the `commit_turn` method of the smart contract
-def test_commit_turn(
-    creator: SigningAccount,
-    apps: dict[str, SalvoClient],
-) -> None:
-    # Get smart contract application from from apps dict
-    app = apps["salvo_client_1"]
-
-    # Define nested function that attemps to call the `commit_turn` method
-    def try_commit_turn_txn(
-        sender: SigningAccount,
-        game_id: int,
-        turn_hash: int,
-        note: bytes | str | None = None,
-    ) -> None:
-
-        # Send app call transaction to execute smart contract method `commit_turn`
-        send_app_call_txn(
-            logger=logger,
-            app=app,
-            sender=sender,
-            method=app.send.commit_turn,
-            args=(game_id, turn_hash),
-            note=note,
-            description="App Call Method Call Transaction: commit_turn()",
-        )
-
-    # Call `try_commit_turn_txn`
-    try_commit_turn_txn(
-        sender=creator,
-        game_id=1,
-        turn_hash=3367837694425617368410147401029684414564229674589041874024747373990573450785,
-        note=b'salvo:j{"method":"commit_turn","concern":"txn.app_call;user_turn_commitment"}',
-    )
-
-    box_c_value = app.state.box.box_game_character.get_value(
-        decode_address(creator.address)
-    )
-
-    # Log
-    logger.info(box_c_value)
-
-
 # # Test case for sending an app call transaction to the `get_box_user_registry` method of the smart contract
-# def test_mimc_tester(
+# def test_get_box_user_registry(
 #     creator: SigningAccount,
 #     apps: dict[str, SalvoClient],
 # ) -> None:
 #     # Get smart contract application from from apps dict
 #     app = apps["salvo_client_1"]
 
-#     # Define nested function that attemps to call the `mimc_tester` method
-#     def try_mimc_tester_txn(
+#     # Define nested function that attemps to call the `get_box_user_registry` method
+#     def try_get_box_user_registry_txn(
 #         sender: SigningAccount,
-#         position: tuple[int, int],
-#         movement: list[tuple[int, int]],
-#         action: int,
-#         direction: int,
-#         salt: int,
 #         note: bytes | str | None = None,
 #     ) -> None:
-#         # Send app call transaction to execute smart contract method `mimc_tester`
+#         # Create the required payment transactions
+#         box_r_pay = create_payment_txn(
+#             app=app,
+#             sender=sender,
+#             amount=cst.BOX_R_COST,
+#             note=b'salvo:j{"concern":"txn.pay;box_r_mbr_pay"}',
+#         )  # Box user registry MBR cost payment
+
+#         # Send app call transaction to execute smart contract method `new_game`
 #         send_app_call_txn(
 #             logger=logger,
 #             app=app,
 #             sender=sender,
-#             method=app.send.mimc_tester,
-#             args=(position, movement, action, direction, salt),
-#             max_fee=20_000,
+#             method=app.send.get_box_user_registry,
+#             args=(box_r_pay,),
 #             note=note,
-#             description="App Call Method Call Transaction: mimc_tester()",
+#             description="App Call Method Call Transaction: get_box_user_registry()",
 #         )
 
-#     # Call `try_mimc_tester_txn`
-#     try_mimc_tester_txn(
+#     # Call `try_get_box_user_registry_txn`
+#     try_get_box_user_registry_txn(
 #         sender=creator,
-#         position=(0, 6),
-#         movement=[(0, 7), (0, 8), (0, 9), (1, 9), (1, 10)],
-#         action=0,
-#         direction=2,
-#         salt=1234567888999,
-#         note=b'salvo:j{"method":"mimc_tester","concern":"txn.app_call;test_mimc_hashing"}',
+#         note=b'salvo:j{"method":"new_game","concern":"txn.app_call;user_registered_their_acc"}',
 #     )
 
-#     # composer = app.new_group()
+#     box_r_value = app.state.box.box_user_registry.get_value(
+#         decode_address(creator.address)
+#     )
 
-#     # composer.mimc_tester(
-#     #     args=((0, 6), [(0, 7), (0, 8), (0, 9), (1, 9), (1, 10)], 0, 2, 1234567888999),
-#     #     params=CommonAppCallParams(
-#     #         sender=creator.address,
-#     #         signer=creator.signer,
-#     #         max_fee=micro_algo(200_000),
-#     #     ),
-#     # )
+#     # Log
+#     logger.info(box_r_value)
 
-#     # result = composer.simulate(
-#     #     # allow_more_logs=True,
-#     #     extra_opcode_budget=100_000,
-#     # )
 
-#     # logger.info(result)
+# # Test case for sending an app call transaction to the `new_game` method of the smart contract
+# def test_new_game(
+#     creator: SigningAccount,
+#     apps: dict[str, SalvoClient],
+# ) -> None:
+#     # Get smart contract application from from apps dict
+#     app = apps["salvo_client_1"]
+
+#     # Define nested function that attemps to call the `new_game` method
+#     def try_new_game_txn(
+#         sender: SigningAccount,
+#         stake_amount: int,
+#         lobby_size: int,
+#         note: bytes | str | None = None,
+#     ) -> None:
+#         # Define payment amounts
+#         box_l_cost = app.send.calc_single_box_cost(
+#             (10, lobby_size * cst.ADDRESS_SIZE)
+#         ).abi_return
+
+#         # Create the required payment transactions
+#         stake_pay = create_payment_txn(
+#             app=app,
+#             sender=sender,
+#             amount=stake_amount,
+#             note=b'salvo:j{"concern":"txn.pay;stake_pay"}',
+#         )  # Stake payment
+#         box_g_pay = create_payment_txn(
+#             app=app,
+#             sender=sender,
+#             amount=cst.BOX_G_COST,
+#             note=b'salvo:j{"concern":"txn.pay;box_g_mbr_pay"}',
+#         )  # Box game grid MBR cost payment
+#         box_s_pay = create_payment_txn(
+#             app=app,
+#             sender=sender,
+#             amount=cst.BOX_S_COST,
+#             note=b'salvo:j{"concern":"txn.pay;box_s_mbr_pay"}',
+#         )  # Box game state MBR cost payment
+#         box_c_pay = create_payment_txn(
+#             app=app,
+#             sender=sender,
+#             amount=cst.BOX_C_COST,
+#             note=b'salvo:j{"concern":"txn.pay;box_c_mbr_pay"}',
+#         )  # Box game character MBR cost payment
+#         box_l_pay = create_payment_txn(
+#             app=app,
+#             sender=sender,
+#             amount=box_l_cost,  # current cost: 32_100 mAlgo
+#             note=b'salvo:j{"concern":"txn.pay;box_l_mbr_pay"}',
+#         )  # Box game lobby MBR cost payment
+
+#         # Send app call transaction to execute smart contract method `new_game`
+#         send_app_call_txn(
+#             logger=logger,
+#             app=app,
+#             sender=sender,
+#             method=app.send.new_game,
+#             args=(
+#                 box_g_pay,
+#                 box_s_pay,
+#                 box_c_pay,
+#                 box_l_pay,
+#                 stake_pay,
+#                 lobby_size,
+#             ),
+#             note=note,
+#             description="App Call Method Call Transaction: new_game()",
+#         )
+
+#     # Call `try_new_game_txn`
+#     try_new_game_txn(
+#         sender=creator,
+#         stake_amount=0,
+#         # stake_amount=2_000_000,
+#         lobby_size=2,
+#         note=b'salvo:j{"method":"new_game","concern":"txn.app_call;create_new_game"}',
+#     )
+
+#     game_id_1_bytes = (1).to_bytes(8, "big")
+#     box_g_value = app.state.box.box_game_grid.get_value(game_id_1_bytes)
+#     box_s_value = app.state.box.box_game_state.get_value(game_id_1_bytes)
+#     box_p_value = app.state.box.box_game_character.get_value(
+#         decode_address(creator.address)
+#     )
+
+#     read_game_1_lobby_txn = app.send.read_box_game_lobby(
+#         args=(1,),
+#         params=CommonAppCallParams(sender=creator.address, signer=creator.address),
+#     )
+
+#     # Log
+#     logger.info(box_g_value)
+#     logger.info(box_s_value)
+#     logger.info(box_p_value)
+
+#     logger.info(f"Creator address: {creator.address}")
+#     logger.info(f"Game lobby: {read_game_1_lobby_txn.abi_return}")
+
+
+# # Test case for sending an app call transaction to the `commit_turn` method of the smart contract
+# def test_commit_turn(
+#     creator: SigningAccount,
+#     apps: dict[str, SalvoClient],
+# ) -> None:
+#     # Get smart contract application from from apps dict
+#     app = apps["salvo_client_1"]
+
+#     # Define nested function that attemps to call the `commit_turn` method
+#     def try_commit_turn_txn(
+#         sender: SigningAccount,
+#         game_id: int,
+#         turn_hash: int,
+#         note: bytes | str | None = None,
+#     ) -> None:
+
+#         # Send app call transaction to execute smart contract method `commit_turn`
+#         send_app_call_txn(
+#             logger=logger,
+#             app=app,
+#             sender=sender,
+#             method=app.send.commit_turn,
+#             args=(game_id, turn_hash),
+#             note=note,
+#             description="App Call Method Call Transaction: commit_turn()",
+#         )
+
+#     # Call `try_commit_turn_txn`
+#     try_commit_turn_txn(
+#         sender=creator,
+#         game_id=1,
+#         turn_hash=3367837694425617368410147401029684414564229674589041874024747373990573450785,
+#         note=b'salvo:j{"method":"commit_turn","concern":"txn.app_call;user_turn_commitment"}',
+#     )
+
+#     box_c_value = app.state.box.box_game_character.get_value(
+#         decode_address(creator.address)
+#     )
+
+#     # Log
+#     logger.info(box_c_value)
+
+
+# # # Test case for sending an app call transaction to the `get_box_user_registry` method of the smart contract
+# # def test_mimc_tester(
+# #     creator: SigningAccount,
+# #     apps: dict[str, SalvoClient],
+# # ) -> None:
+# #     # Get smart contract application from from apps dict
+# #     app = apps["salvo_client_1"]
+
+# #     # Define nested function that attemps to call the `mimc_tester` method
+# #     def try_mimc_tester_txn(
+# #         sender: SigningAccount,
+# #         position: tuple[int, int],
+# #         movement: list[tuple[int, int]],
+# #         action: int,
+# #         direction: int,
+# #         salt: int,
+# #         note: bytes | str | None = None,
+# #     ) -> None:
+# #         # Send app call transaction to execute smart contract method `mimc_tester`
+# #         send_app_call_txn(
+# #             logger=logger,
+# #             app=app,
+# #             sender=sender,
+# #             method=app.send.mimc_tester,
+# #             args=(position, movement, action, direction, salt),
+# #             max_fee=20_000,
+# #             note=note,
+# #             description="App Call Method Call Transaction: mimc_tester()",
+# #         )
+
+# #     # Call `try_mimc_tester_txn`
+# #     try_mimc_tester_txn(
+# #         sender=creator,
+# #         position=(0, 6),
+# #         movement=[(0, 7), (0, 8), (0, 9), (1, 9), (1, 10)],
+# #         action=0,
+# #         direction=2,
+# #         salt=1234567888999,
+# #         note=b'salvo:j{"method":"mimc_tester","concern":"txn.app_call;test_mimc_hashing"}',
+# #     )
+
+# #     # composer = app.new_group()
+
+# #     # composer.mimc_tester(
+# #     #     args=((0, 6), [(0, 7), (0, 8), (0, 9), (1, 9), (1, 10)], 0, 2, 1234567888999),
+# #     #     params=CommonAppCallParams(
+# #     #         sender=creator.address,
+# #     #         signer=creator.signer,
+# #     #         max_fee=micro_algo(200_000),
+# #     #     ),
+# #     # )
+
+# #     # result = composer.simulate(
+# #     #     # allow_more_logs=True,
+# #     #     extra_opcode_budget=100_000,
+# #     # )
+
+# #     # logger.info(result)

@@ -1,5 +1,5 @@
 {
-  "name": "Salvo-frontend",
+  "name": "salvo-frontend",
   "version": "0.1.0",
   "author": {
     "name": "jizen",
@@ -14,8 +14,9 @@
   "devDependencies": {
     "@algorandfoundation/algokit-client-generator": "^5.0.0",
     "@playwright/test": "^1.35.0",
+    "@types/dotenv": "^6.1.1",
     "@types/jest": "29.5.2",
-    "@types/node": "^18.17.14",
+    "@types/node": "^18.19.127",
     "@types/react": "^18.2.11",
     "@types/react-dom": "^18.2.4",
     "@typescript-eslint/eslint-plugin": "^7.0.2",
@@ -30,6 +31,7 @@
     "tailwindcss": "3.3.2",
     "ts-jest": "^29.1.1",
     "ts-node": "^10.9.1",
+    "tsc-alias": "^1.8.16",
     "typescript": "^5.1.6",
     "vite": "^5.0.0",
     "vite-plugin-node-polyfills": "^0.22.0"
@@ -40,8 +42,10 @@
     "@perawallet/connect": "^1.4.1",
     "@txnlab/use-wallet": "^4.0.0",
     "@txnlab/use-wallet-react": "^4.0.0",
+    "@types/snarkjs": "^0.7.9",
     "algosdk": "^3.0.0",
     "daisyui": "^4.0.0",
+    "dotenv": "^17.2.2",
     "notistack": "^3.0.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
