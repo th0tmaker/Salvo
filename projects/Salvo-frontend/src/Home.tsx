@@ -5,8 +5,9 @@ import React, { useState } from 'react'
 import AppCalls from './components/AppCalls'
 import ConnectWallet from './components/ConnectWallet'
 import Transact from './components/Transact'
-import { exportVKeyPoints } from './scripts/handleVKeyPoints'
-
+import { getProof, serializeProof } from './scripts/snarkjs/processProof'
+import { getVKeyGPoints } from './scripts/snarkjs/processVKeyGPoints'
+import { getCurveFromName } from './utils/snarkjs/curves'
 interface HomeProps {}
 
 const Home: React.FC<HomeProps> = () => {
@@ -15,14 +16,31 @@ const Home: React.FC<HomeProps> = () => {
   const [appCallsDemoModal, setAppCallsDemoModal] = useState<boolean>(false)
   const { activeAddress } = useWallet()
 
-  const getVKeyPoints = async () => {
+  const getVKeyPointsPayload = async () => {
     try {
-      const zKeyPath = import.meta.env?.VITE_ZKEY_PATH || '/turn_validator.zkey'
-      const result = await exportVKeyPoints(zKeyPath, true)
+      const zKeyPath = import.meta.env?.VITE_ZKEY_PATH || 'public/main.zkey'
+      const result = await getVKeyGPoints(zKeyPath)
       consoleLogger.info('✅ Verification key points serialized successfully!')
-      consoleLogger.info(`Verification key curve points data: ${result}`)
+      consoleLogger.info(`Verification key G points data: ${result}`)
     } catch (err) {
-      consoleLogger.error('❌ Failed to process VKey curve points serialization:', err)
+      consoleLogger.error('❌ Failed to process VKey G points serialization:', err)
+    }
+  }
+
+  const getProofPayload = async () => {
+    try {
+      // Step 2: Get the elliptic curve (BLS12-381) used for zk-SNARKs
+      const curve = await getCurveFromName('bls12381')
+
+      // const zKeyPath = import.meta.env?.VITE_ZKEY_PATH || 'public/main.zkey'
+      const result = await serializeProof('/proof.json', curve)
+
+      const abcd = getProof('proof_json', curve)
+
+      consoleLogger.info('✅ Proof serialized successfully!')
+      consoleLogger.info(`Proof data: ${result}`)
+    } catch (err) {
+      consoleLogger.error('Error! Failed proof serialization:', err)
     }
   }
 
@@ -60,7 +78,7 @@ const Home: React.FC<HomeProps> = () => {
             </a>
 
             <div className="divider" />
-            <button data-test-id="connect-wallet" className="btn m-2" onClick={getVKeyPoints}>
+            <button data-test-id="connect-wallet" className="btn m-2" onClick={getVKeyPointsPayload}>
               Wallet Connection
             </button>
 

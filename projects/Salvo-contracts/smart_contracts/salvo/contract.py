@@ -9,10 +9,12 @@ from algopy import (
     BoxRef,
     Bytes,
     Global,
+    OpUpFeeSource,
     TemplateVar,
     Txn,
     UInt64,
     arc4,
+    ensure_budget,
     gtxn,
     op,
     urange,
@@ -340,77 +342,77 @@ class Salvo(ARC4Contract, avm_version=11):
     #         == True
     #     )
 
-    # # Ensure transaction has sufficient opcode budget
-    # ensure_budget(required_budget=10500, fee_source=OpUpFeeSource.GroupCredit)
+    @arc4.abimethod
+    def mimc_tester(self) -> Bytes:
+        # Ensure transaction has sufficient opcode budget
+        ensure_budget(required_budget=68600, fee_source=OpUpFeeSource.GroupCredit)
 
-    # self.
+        # Extract row and column values from the given position argument
+        # row, col = position.native
 
-    # # Extract row and column values from the given position argument
-    # row, col = position.native
+        # NOTE: Consider as mimc input
+        # assert game_id.native in self.box_game_grid, err.BOX_NOT_FOUND
 
-    # # NOTE: Consider as mimc input
-    # # assert game_id.native in self.box_game_grid, err.BOX_NOT_FOUND
+        # Fail transaction unless the assertion below evaluates True
+        # srt.assert_coords_in_range(row, col)
+        # assert (
+        #     srt.convert_grid_coords_to_index(row, col)
+        #     == self.box_game_character[Txn.sender].position
+        # ), err.POSITION_MISMATCH
 
-    # # Fail transaction unless the assertion below evaluates True
-    # srt.assert_coords_in_range(row, col)
-    # assert (
-    #     srt.convert_grid_coords_to_index(row, col)
-    #     == self.box_game_character[Txn.sender].position
-    # ), err.POSITION_MISMATCH
+        # assert (
+        #     movement.length <= self.box_game_character[Txn.sender].move_points
+        # ), err.MOVEMENT_OVERFLOW
 
-    # assert (
-    #     movement.length <= self.box_game_character[Txn.sender].move_points
-    # ), err.MOVEMENT_OVERFLOW
+        # assert action <= 1, err.ACTION_OVERFLOW
+        # assert direction <= 3, err.DIRECTION_OVERFLOW
 
-    # assert action <= 1, err.ACTION_OVERFLOW
-    # assert direction <= 3, err.DIRECTION_OVERFLOW
+        # assert srt.is_move_sequence_valid(
+        #     UInt64(1), self.box_game_grid, position, movement.copy()
+        # ), err.INVALID_MOVE_SEQUENCE
 
-    # assert srt.is_move_sequence_valid(
-    #     UInt64(1), self.box_game_grid, position, movement.copy()
-    # ), err.INVALID_MOVE_SEQUENCE
+        # Initialize a preimage byte array that will store scalar input ints for MiMC hashing
+        preimage = Bytes()
+        # preimage += srt.u64_to_fr32(arc4.UInt64(cst.DOMAIN_PREFIX))
+        # # preimage += srt.u64_to_fr32(game_id) <- Consider as mimc input
 
-    # # Initialize a preimage byte array that will store scalar input ints for MiMC hashing
-    # preimage = Bytes()
-    # # preimage += srt.u64_to_fr32(arc4.UInt64(cst.DOMAIN_PREFIX))
-    # # # preimage += srt.u64_to_fr32(game_id) <- Consider as mimc input
+        # # Iterate through all the entries in the movement coords array
+        # for new_coords in movement:
+        #     # Extract new row and new column values from the given movement argument
+        #     new_row, new_col = new_coords.native
+        #     # Append the validated move to preimage
+        #     preimage += srt.u8_to_fr32(new_row)
+        #     preimage += srt.u8_to_fr32(new_col)
 
-    # # # Iterate through all the entries in the movement coords array
-    # # for new_coords in movement:
-    # #     # Extract new row and new column values from the given movement argument
-    # #     new_row, new_col = new_coords.native
-    # #     # Append the validated move to preimage
-    # #     preimage += srt.u8_to_fr32(new_row)
-    # #     preimage += srt.u8_to_fr32(new_col)
+        # # Add rest of the scalar inputs
+        # preimage += srt.u8_to_fr32(action)
+        # preimage += srt.u8_to_fr32(direction)
+        # preimage += srt.u64_to_fr32(salt)
+        for i in urange(121):  # urange(121) generates UInt64 values from 0 to 120
+            preimage += srt.u8_to_fr32(arc4.UInt8(1))
+        # preimage += srt.u8_to_fr32(arc4.UInt8(1))
+        # preimage += srt.u8_to_fr32(arc4.UInt8(2))
+        # preimage += srt.u64_to_fr32(arc4.UInt64(22244674235551615))
 
-    # # # Add rest of the scalar inputs
-    # # preimage += srt.u8_to_fr32(action)
-    # # preimage += srt.u8_to_fr32(direction)
-    # # preimage += srt.u64_to_fr32(salt)
+        # # After processing the full sequence, find valid path cells of the last updated position
+        # neighbors_with_count = srt.get_neighbors_with_count(
+        #     UInt64(1),
+        #     self.box_game_grid,
+        #     position,
+        # )
 
-    # preimage += srt.u8_to_fr32(arc4.UInt8(3))
-    # preimage += srt.u8_to_fr32(arc4.UInt8(1))
-    # preimage += srt.u8_to_fr32(arc4.UInt8(2))
-    # preimage += srt.u64_to_fr32(arc4.UInt64(22244674235551615))
+        # valid_path_cells = srt.get_valid_path_cells(neighbors_with_count)
+        # test = arc4.UInt256(
+        #     47153278636951250277202262925224176210829230980727422161852484596143340668883
+        # )
 
-    # # # After processing the full sequence, find valid path cells of the last updated position
-    # # neighbors_with_count = srt.get_neighbors_with_count(
-    # #     UInt64(1),
-    # #     self.box_game_grid,
-    # #     position,
-    # # )
+        output = op.mimc(op.MiMCConfigurations.BLS12_381Mp111, preimage)
 
-    # # valid_path_cells = srt.get_valid_path_cells(neighbors_with_count)
-    # test = arc4.UInt256(
-    #     47153278636951250277202262925224176210829230980727422161852484596143340668883
-    # )
+        # # return srt.check_valid_move(
+        # #     UInt64(1), self.box_game_grid[self.game_id], current_pos
+        # # )
 
-    # output = op.mimc(op.MiMCConfigurations.BLS12_381Mp111, preimage)
-
-    # # # return srt.check_valid_move(
-    # # #     UInt64(1), self.box_game_grid[self.game_id], current_pos
-    # # # )
-
-    # return test.bytes == output
+        return output
 
     @arc4.abimethod(allow_actions=["UpdateApplication"])
     def update(self) -> None:

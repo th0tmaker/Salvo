@@ -13,138 +13,115 @@ VKEY_PATH = ARTIFACTS_DIR / "verification_key.json"
 FRONTEND_DIR = APP_DIR.parent / "Salvo-frontend"
 
 
-def get_root_of_unity(logger: Logger) -> str:
-    # Load JSON
-    with open(ARTIFACTS_DIR / "verification_key.json") as f:
-        vkey_json = json.load(f)
-    logger.info(list(int(vkey_json["w"]).to_bytes(32, byteorder="big")))
-    logger.info(len(int(vkey_json["w"]).to_bytes(32, byteorder="big").hex()))
-    # logger.info(len(int(vkey_json["Qm"]).to_bytes(96, byteorder="big").hex()))
-    # logger.info(int(vkey_json["Qm"][0]))
-    # logger.info(int(vkey_json["Qm"][0]).to_bytes(32, byteorder="big"))
-    logger.info(FRONTEND_DIR)
+def encode_proof(logger: Logger) -> str:
+    # Load the serialized proof data JSON file
+    with open(ARTIFACTS_DIR / "proof.json") as f:
+        proof_json = json.load(f)
 
-    return int(vkey_json["w"]).to_bytes(32, byteorder="big").hex()
-
-
-def encode_vkey(logger: Logger) -> str:
-    # Load the verification key JSON (standard snarkjs format)
-    with open(ARTIFACTS_DIR / "verification_key.json") as f:
-        vkey_json = json.load(f)
-
-    # Load the vkey points JSON (your custom format with base64 encoded points)
-    with open(ARTIFACTS_DIR / "vkey_points.json") as f:
-        vkey_points_json = json.load(f)
+    with open(ARTIFACTS_DIR / "proof_payload.json") as f:
+        proof_payload_json = json.load(f)
 
     # Decode the base64 encoded curve points
-    vkey_points_bytes = base64.b64decode(vkey_points_json["vKeyPointsUncompressed"])
+    proof_payload_bytes = base64.b64decode(proof_payload_json["data"])
 
-    logger.info(f"Loaded vkey_points_bytes length: {len(vkey_points_bytes)} bytes")
-
-    # Verify expected length: 8 * G1(96) + 1 * G2(192) = 768 + 192 = 960 bytes
-    if len(vkey_points_bytes) != 960:
-        raise ValueError(f"Expected 960 bytes, got {len(vkey_points_bytes)} bytes")
+    # Verify expected length: 9 * G1(96) + 6 * fEval(32) = 864 + 192 = 1056 bytes
+    if len(proof_payload_bytes) != 1056:
+        raise ValueError(f"Expected 1056 bytes, got {len(proof_payload_bytes)} bytes")
 
     # Define the ABI struct
-    vkey_fields = [
-        StructField(name="Qm", type="byte[96]"),
-        StructField(name="Ql", type="byte[96]"),
-        StructField(name="Qr", type="byte[96]"),
-        StructField(name="Qo", type="byte[96]"),
-        StructField(name="Qc", type="byte[96]"),
-        StructField(name="S1", type="byte[96]"),
-        StructField(name="S2", type="byte[96]"),
-        StructField(name="S3", type="byte[96]"),
-        StructField(name="power", type="uint64"),
-        StructField(name="nPublic", type="uint64"),
-        StructField(name="k1", type="uint64"),
-        StructField(name="k2", type="uint64"),
-        StructField(name="X_2", type="byte[192]"),
+    proof_fields = [
+        StructField(name="A", type="byte[96]"),
+        StructField(name="B", type="byte[96]"),
+        StructField(name="C", type="byte[96]"),
+        StructField(name="Z", type="byte[96]"),
+        StructField(name="T1", type="byte[96]"),
+        StructField(name="T2", type="byte[96]"),
+        StructField(name="T3", type="byte[96]"),
+        StructField(name="Wxi", type="byte[96]"),
+        StructField(name="Wxiw", type="byte[96]"),
+        StructField(name="eval_a", type="uint256"),
+        StructField(name="eval_b", type="uint256"),
+        StructField(name="eval_c", type="uint256"),
+        StructField(name="eval_s1", type="uint256"),
+        StructField(name="eval_s2", type="uint256"),
+        StructField(name="eval_zw", type="uint256"),
     ]
-
-    structs = {"VerificationKey": vkey_fields}
 
     # Extract G1 points (8 points, 96 bytes each)
     point_size = 96
-    g1_points = ["Qm", "Ql", "Qr", "Qo", "Qc", "S1", "S2", "S3"]
+    g1_points = ["A", "B", "C", "Z", "T1", "T2", "T3", "Wxi", "Wxiw"]
 
-    vkey_points = {}
+    proof_g1_points = {}
     for i, point in enumerate(g1_points):
         start = i * point_size
         end = start + point_size
-        vkey_points[point] = vkey_points_bytes[start:end]
+        proof_g1_points[point] = proof_payload_bytes[start:end]
         logger.debug(f"Extracted {point}: bytes {start}-{end}")
 
-    # Extract G2 point (X_2) - last 192 bytes
-    x2_start = 8 * point_size  # 768
-    vkey_points["X_2"] = vkey_points_bytes[x2_start : x2_start + 192]
-    logger.debug(f"Extracted X_2: bytes {x2_start}-{x2_start + 192}")
-
-    # Get scalar values from verification key JSON
+    # Get scalar values from proof JSON
     # These come from the standard snarkjs verification key format
     try:
-        power = int(vkey_json["power"])
-        n_public = int(vkey_json["nPublic"])
-        k1 = int(vkey_json["k1"])
-        k2 = int(vkey_json["k2"])
+        eval_a = int(proof_json["eval_a"])
+        eval_b = int(proof_json["eval_b"])
+        eval_c = int(proof_json["eval_c"])
+        eval_s1 = int(proof_json["eval_s1"])
+        eval_s2 = int(proof_json["eval_s2"])
+        eval_zw = int(proof_json["eval_zw"])
     except (KeyError, ValueError) as e:
-        logger.error(f"Error extracting scalar values from vkey_json: {e}")
+        logger.error(f"Error extracting scalar values from proof_json: {e}")
         raise
 
     # Build the struct data with correct byte encoding
-    vkey_bytes = {
-        "Qm": vkey_points["Qm"],
-        "Ql": vkey_points["Ql"],
-        "Qr": vkey_points["Qr"],
-        "Qo": vkey_points["Qo"],
-        "Qc": vkey_points["Qc"],
-        "S1": vkey_points["S1"],
-        "S2": vkey_points["S2"],
-        "S3": vkey_points["S3"],
-        "power": power,
-        "nPublic": n_public,
-        "k1": k1,
-        "k2": k2,
-        "X_2": vkey_points["X_2"],
+    proof_bytes = {
+        "A": proof_g1_points["A"],
+        "B": proof_g1_points["B"],
+        "C": proof_g1_points["C"],
+        "Z": proof_g1_points["Z"],
+        "T1": proof_g1_points["T1"],
+        "T2": proof_g1_points["T2"],
+        "T3": proof_g1_points["T3"],
+        "Wxi": proof_g1_points["Wxi"],
+        "Wxiw": proof_g1_points["Wxiw"],
+        "eval_a": eval_a,
+        "eval_b": eval_b,
+        "eval_c": eval_c,
+        "eval_s1": eval_s1,
+        "eval_s2": eval_s2,
+        "eval_zw": eval_zw,
     }
 
-    logger.info("Verification key components:")
-    logger.info(f"  Power: {power}")
-    logger.info(f"  nPublic: {n_public}")
-    logger.info(f"  k1: {k1}")
-    logger.info(f"  k2: {k2}")
-    logger.info(f"  G1 points: {len(g1_points)} points, {point_size} bytes each")
-    logger.info(f"  G2 point (X_2): {len(vkey_points['X_2'])} bytes")
-
+    # DEBUG
     # Validate byte array lengths
-    for field_name, field_value in vkey_bytes.items():
-        if isinstance(field_value, bytes):
-            expected_length = {
-                "Qm": 96,
-                "Ql": 96,
-                "Qr": 96,
-                "Qo": 96,
-                "Qc": 96,
-                "S1": 96,
-                "S2": 96,
-                "S3": 96,
-                "power": 8,
-                "nPublic": 8,
-                "k1": 8,
-                "k2": 8,
-                "X_2": 192,
-            }
-            if field_name in expected_length:
-                actual_length = len(field_value)
-                if actual_length != expected_length[field_name]:
-                    raise ValueError(
-                        f"Field {field_name}: expected {expected_length[field_name]} bytes, "
-                        f"got {actual_length} bytes"
-                    )
+    # for field_name, field_value in proof_bytes.items():
+    #     if isinstance(field_value, bytes):
+    #         expected_length = {
+    #             "A": 96,
+    #             "B": 96,
+    #             "C": 96,
+    #             "Z": 96,
+    #             "T1": 96,
+    #             "T2": 96,
+    #             "T3": 96,
+    #             "Wxi": 96,
+    #             "Wxiw": 96,
+    #             "eval_a": 32,
+    #             "eval_b": 32,
+    #             "eval_c": 32,
+    #             "eval_s1": 32,
+    #             "eval_s2": 32,
+    #             "eval_zw": 32,
+    #         }
+    #         if field_name in expected_length:
+    #             actual_length = len(field_value)
+    #             if actual_length != expected_length[field_name]:
+    #                 raise ValueError(
+    #                     f"Field {field_name}: expected {expected_length[field_name]} bytes, "
+    #                     f"got {actual_length} bytes"
+    #                 )
 
     # Encode the struct using Algorand ABI
     try:
-        encoded = get_abi_encoded_value(vkey_bytes, "VerificationKey", structs)
+        encoded = get_abi_encoded_value(proof_bytes, "Proof", {"Proof": proof_fields})
         logger.info(f"Successfully encoded verification key: {len(encoded)} bytes")
         return encoded.hex()
     except Exception as e:
